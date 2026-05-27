@@ -8,9 +8,9 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;padding:12px;}
 
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
 h1{font-size:18px;font-weight:700;}
-.last-updated{font-size:11px;color:#aaa;}
+.last-updated{font-size:11px;color:#aaa;margin-bottom:12px;}
 
 .status-bar{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
 .status-bar.loading{background:#e3eeff;color:#1a5fa8;display:block;}
@@ -36,11 +36,10 @@ input[type=file]{display:none;}
 
 .section-head{font-size:12px;font-weight:700;color:#888;padding:6px 0 8px;border-bottom:1px solid #e8e8e8;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
 
+/* Regular lot card */
 .lot-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .lot-card.has-sell{border-left:3px solid #2d7a2d;}
-.lot-card.has-buy{border-left:3px solid #1a5fa8;}
 .lot-card.has-near{border-left:3px solid #a06000;}
-
 .lot-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
 .lot-sym{font-size:18px;font-weight:700;}
 .lot-acct{font-size:11px;color:#aaa;margin-top:2px;}
@@ -50,17 +49,26 @@ input[type=file]{display:none;}
 .badge-buy{background:#e3eeff;color:#1a5fa8;}
 .badge-ok{background:#f2f2f2;color:#888;}
 .badge-near{background:#fff3e0;color:#a06000;}
-
 .lot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px;}
 .lot-field{display:flex;flex-direction:column;gap:2px;}
 .lot-field-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.3px;}
 .lot-field-val{font-size:14px;font-weight:500;}
 .pos{color:#2d7a2d;}.neg{color:#c0392b;}
-
 .lot-note{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:12px;color:#888;line-height:1.5;}
+
+/* Buy card — one per stock */
+.buy-card{background:#fff;border-left:3px solid #1a5fa8;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.buy-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.buy-sym{font-size:18px;font-weight:700;}
+.buy-acct{font-size:11px;color:#aaa;margin-top:2px;}
+.buy-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px;margin-bottom:10px;}
+.buy-lots-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;}
+.buy-lots-table{width:100%;border-collapse:collapse;font-size:12px;}
+.buy-lots-table th{text-align:left;color:#aaa;font-weight:500;padding:3px 6px 3px 0;font-size:11px;}
+.buy-lots-table td{padding:4px 6px 4px 0;border-top:1px solid #f5f5f5;color:#1a1a1a;}
+
 .no-data{text-align:center;padding:2rem;color:#aaa;font-size:14px;}
 .section-wrap{margin-bottom:16px;}
-
 .refresh-btn{padding:8px 14px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;font-size:13px;cursor:pointer;color:#1a5fa8;font-weight:600;}
 .refresh-btn:active{background:#e3eeff;}
 </style>
@@ -72,12 +80,9 @@ input[type=file]{display:none;}
   <button class="refresh-btn" onclick="loadFromRepo()">↻ Refresh</button>
 </div>
 <div class="last-updated" id="lastUpdated">Loading latest data...</div>
-
 <div class="status-bar" id="statusBar"></div>
 
-<label class="upload-btn" for="csvFile">
-  ↑ Or upload CSV manually
-</label>
+<label class="upload-btn" for="csvFile">↑ Or upload CSV manually</label>
 <input type="file" id="csvFile" accept=".csv">
 
 <div class="controls">
@@ -111,7 +116,6 @@ input[type=file]{display:none;}
 <div id="tableArea"></div>
 
 <script>
-// ── Auto-load from GitHub repo ───────────────────────────────────────────────
 const GITHUB_USER = "shoma414";
 const GITHUB_REPO = "portfolio-analyzer";
 const CSV_URL  = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/portfolio.csv`;
@@ -119,29 +123,23 @@ const META_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO
 
 function setStatus(msg, type) {
   const bar = document.getElementById("statusBar");
-  bar.textContent = msg;
-  bar.className = "status-bar " + type;
+  bar.textContent = msg; bar.className = "status-bar " + type;
 }
 
 async function loadFromRepo() {
-  setStatus("Fetching latest portfolio data from GitHub...", "loading");
+  setStatus("Fetching latest portfolio data...", "loading");
   try {
-    // Load metadata first
     try {
       const metaRes = await fetch(META_URL + "?t=" + Date.now());
       if (metaRes.ok) {
         const meta = await metaRes.json();
         document.getElementById("lastUpdated").textContent = "Last updated: " + meta.last_updated;
       }
-    } catch(e) { /* metadata optional */ }
-
-    // Load CSV
+    } catch(e) {}
     const csvRes = await fetch(CSV_URL + "?t=" + Date.now());
-    if (!csvRes.ok) throw new Error("CSV not found in repo yet. Upload manually or wait for first automation run.");
-    const text = await csvRes.text();
-    allRows = parseCSV(text);
-    populateAcctFilter();
-    renderAll();
+    if (!csvRes.ok) throw new Error("CSV not found yet. Upload manually or wait for first automation run.");
+    allRows = parseCSV(await csvRes.text());
+    populateAcctFilter(); renderAll();
     setStatus("✓ Data loaded successfully", "success");
     setTimeout(() => document.getElementById("statusBar").style.display = "none", 3000);
   } catch(err) {
@@ -150,7 +148,6 @@ async function loadFromRepo() {
   }
 }
 
-// ── CSV Parser ───────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const rows = []; let headers = null;
   for (const line of text.split('\n')) {
@@ -171,15 +168,16 @@ function parseCSV(text) {
   return rows;
 }
 
-// ── Strategy Logic ───────────────────────────────────────────────────────────
 function processLots(rows, sellPct, buyPct, nearPct) {
+  // Find lowest cost per symbol+account group
   const groups = {};
   for (const r of rows) {
     const k = r.Symbol + '||' + r.ClientAccountID;
     const cost = parseFloat(r.CostBasisPrice);
     if (!isNaN(cost) && cost > 0) { if (!groups[k]) groups[k] = []; groups[k].push(cost); }
   }
-  return rows.map(r => {
+
+  const lots = rows.map(r => {
     const sym = r.Symbol, acct = r.ClientAccountID;
     const cost = parseFloat(r.CostBasisPrice), mark = parseFloat(r.MarkPrice);
     const qty = parseFloat(r.Quantity), pnl = parseFloat(r.FifoPnlUnrealized);
@@ -192,11 +190,30 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     let signal = 'OK';
     if (pct >= sellPct) signal = 'SELL';
     else if (pct >= nearPct) signal = 'NEAR_SELL';
-    return {sym,acct,cost,mark,qty,pnl,pct,date:r.OpenDateTime,signal,lowestCost,buyTrigger,buySignal};
+    return {sym, acct, cost, mark, qty, pnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal};
   }).filter(Boolean);
+
+  // Build buy groups — one entry per symbol+account
+  const buyGroups = {};
+  for (const lot of lots) {
+    if (!lot.buySignal) continue;
+    const k = lot.sym + '||' + lot.acct;
+    if (!buyGroups[k]) {
+      buyGroups[k] = {
+        sym: lot.sym, acct: lot.acct,
+        mark: lot.mark, lowestCost: lot.lowestCost, buyTrigger: lot.buyTrigger,
+        lots: [], totalQty: 0, totalPnl: 0
+      };
+    }
+    buyGroups[k].lots.push(lot);
+    buyGroups[k].totalQty += lot.qty;
+    buyGroups[k].totalPnl += lot.pnl;
+  }
+
+  return { lots, buyGroups: Object.values(buyGroups) };
 }
 
-let allRows = [], processedData = [];
+let allRows = [], processedData = { lots: [], buyGroups: [] };
 
 function getP() {
   return {
@@ -223,37 +240,78 @@ function fmtDate(dt) {
   return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
 }
 
-function applyFilters(data) {
+function applyFilters(lots, buyGroups) {
   const acctF = document.getElementById('acctFilter').value.trim();
   const sigF  = document.getElementById('signalFilter').value;
   const symF  = document.getElementById('symFilter').value.trim().toUpperCase();
-  return data.filter(d => {
+
+  const filteredLots = lots.filter(d => {
     if (acctF && d.acct !== acctF) return false;
     if (symF  && !d.sym.includes(symF)) return false;
-    if (sigF==='SELL')      return d.signal==='SELL';
-    if (sigF==='NEAR_SELL') return d.signal==='NEAR_SELL';
-    if (sigF==='BUY')       return d.buySignal;
+    if (sigF === 'BUY') return false; // buy shown separately
+    if (sigF === 'SELL') return d.signal === 'SELL';
+    if (sigF === 'NEAR_SELL') return d.signal === 'NEAR_SELL';
     return true;
   });
+
+  const filteredBuys = (sigF === 'SELL' || sigF === 'NEAR_SELL') ? [] : buyGroups.filter(d => {
+    if (acctF && d.acct !== acctF) return false;
+    if (symF  && !d.sym.includes(symF)) return false;
+    return true;
+  });
+
+  return { filteredLots, filteredBuys };
 }
 
-function cardHtml(d, p) {
+function buyCardHtml(d, p) {
+  const dropPct = (((d.mark - d.lowestCost) / d.lowestCost) * 100).toFixed(1);
+  const lotsRows = d.lots.map(l => {
+    const lPct = (((l.mark - l.cost) / l.cost) * 100).toFixed(1);
+    const lPnl = (l.pnl >= 0 ? '+' : '') + '$' + Math.abs(l.pnl).toFixed(0);
+    return `<tr>
+      <td>${fmtDate(l.date)}</td>
+      <td>$${l.cost.toFixed(2)}</td>
+      <td>${l.qty}</td>
+      <td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td>
+      <td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="buy-card">
+    <div class="buy-card-top">
+      <div><div class="buy-sym">${d.sym}</div><div class="buy-acct">${d.acct}</div></div>
+      <span class="badge badge-buy">Buy ↓</span>
+    </div>
+    <div class="buy-summary">
+      <div class="lot-field"><span class="lot-field-label">Mark price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Lowest lot</span><span class="lot-field-val">$${d.lowestCost.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Drop from lowest</span><span class="lot-field-val neg">${dropPct}%</span></div>
+      <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Total qty</span><span class="lot-field-val">${d.totalQty.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Total P&L</span><span class="lot-field-val ${d.totalPnl>=0?'pos':'neg'}">${d.totalPnl>=0?'+':''}$${Math.abs(d.totalPnl).toFixed(0)}</span></div>
+    </div>
+    <div class="buy-lots-label">All lots</div>
+    <table class="buy-lots-table">
+      <thead><tr><th>Opened</th><th>Cost</th><th>Qty</th><th>Chg%</th><th>P&L</th></tr></thead>
+      <tbody>${lotsRows}</tbody>
+    </table>
+  </div>`;
+}
+
+function lotCardHtml(d, p) {
   const pctStr = (d.pct>=0?'+':'')+d.pct.toFixed(1)+'%';
   const pnlStr = (d.pnl>=0?'+':'')+'$'+Math.abs(d.pnl).toFixed(0);
-  let badges = '', cardClass = 'lot-card';
-  if (d.signal==='SELL')      { badges += `<span class="badge badge-sell">Sell ↑</span>`; cardClass += ' has-sell'; }
-  else if(d.signal==='NEAR_SELL') { badges += `<span class="badge badge-near">Near sell</span>`; cardClass += ' has-near'; }
-  else badges += `<span class="badge badge-ok">Hold</span>`;
-  if (d.buySignal) { badges += `<span class="badge badge-buy">Buy ↓</span>`; cardClass += ' has-buy'; }
-  const note = d.buySignal
-    ? `Mark $${d.mark.toFixed(2)} hit buy trigger ≤$${d.buyTrigger.toFixed(2)} (lowest lot $${d.lowestCost.toFixed(2)})`
-    : d.signal==='SELL' ? `Up ${d.pct.toFixed(1)}% from cost $${d.cost.toFixed(2)}`
+  let badge = '', cardClass = 'lot-card';
+  if (d.signal==='SELL')      { badge = `<span class="badge badge-sell">Sell ↑</span>`; cardClass += ' has-sell'; }
+  else if(d.signal==='NEAR_SELL') { badge = `<span class="badge badge-near">Near sell</span>`; cardClass += ' has-near'; }
+  else badge = `<span class="badge badge-ok">Hold</span>`;
+  const note = d.signal==='SELL' ? `Up ${d.pct.toFixed(1)}% from cost $${d.cost.toFixed(2)}`
     : d.signal==='NEAR_SELL' ? `${(p.sellPct-d.pct).toFixed(1)}% away from sell target`
     : '';
   return `<div class="${cardClass}">
     <div class="lot-card-top">
       <div><div class="lot-sym">${d.sym}</div><div class="lot-acct">${d.acct}</div></div>
-      <div class="badges">${badges}</div>
+      <div class="badges">${badge}</div>
     </div>
     <div class="lot-grid">
       <div class="lot-field"><span class="lot-field-label">Qty</span><span class="lot-field-val">${d.qty}</span></div>
@@ -270,54 +328,50 @@ function cardHtml(d, p) {
 function renderAll() {
   const p = getP();
   processedData = processLots(allRows, p.sellPct, p.buyPct, p.nearPct);
-  const filtered = applyFilters(processedData);
   const sigF = document.getElementById('signalFilter').value;
+  const { filteredLots, filteredBuys } = applyFilters(processedData.lots, processedData.buyGroups);
 
-  const sells = filtered.filter(d=>d.signal==='SELL').length;
-  const nears = filtered.filter(d=>d.signal==='NEAR_SELL').length;
-  const buySyms = [...new Set(filtered.filter(d=>d.buySignal).map(d=>d.sym+'||'+d.acct))].length;
+  const sells = filteredLots.filter(d=>d.signal==='SELL').length;
+  const nears = filteredLots.filter(d=>d.signal==='NEAR_SELL').length;
 
   document.getElementById('summaryGrid').innerHTML = `
-    <div class="metric"><div class="metric-label">Lots shown</div><div class="metric-val">${filtered.length}</div></div>
+    <div class="metric"><div class="metric-label">Lots shown</div><div class="metric-val">${filteredLots.length}</div></div>
     <div class="metric"><div class="metric-label">Sell signals ≥${p.sellPct}%</div><div class="metric-val sell">${sells}</div></div>
     <div class="metric"><div class="metric-label">Near sell ≥${p.nearPct}%</div><div class="metric-val warn">${nears}</div></div>
-    <div class="metric"><div class="metric-label">Buy opportunities</div><div class="metric-val buy">${buySyms}</div></div>`;
+    <div class="metric"><div class="metric-label">Buy opportunities</div><div class="metric-val buy">${filteredBuys.length}</div></div>`;
 
-  filtered.sort((a,b)=>{
+  filteredLots.sort((a,b)=>{
     const o={SELL:0,NEAR_SELL:1,OK:2};
     if(o[a.signal]!==o[b.signal]) return o[a.signal]-o[b.signal];
     return a.sym.localeCompare(b.sym);
   });
+  filteredBuys.sort((a,b)=>a.sym.localeCompare(b.sym));
 
-  const buyRows   = filtered.filter(d=>d.buySignal);
-  const otherRows = filtered.filter(d=>!d.buySignal);
   let html = '';
-
   if (!allRows.length) {
     html = `<div class="no-data">Loading data... if this persists, upload CSV manually above.</div>`;
   } else {
-    if (buyRows.length && sigF!=='SELL' && sigF!=='NEAR_SELL') {
-      html += `<div class="section-head">Buy opportunities</div>
-               <div class="section-wrap">${buyRows.map(d=>cardHtml(d,p)).join('')}</div>`;
+    if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL') {
+      html += `<div class="section-head">🔵 Buy opportunities — ${filteredBuys.length} stock${filteredBuys.length>1?'s':''}</div>
+               <div class="section-wrap">${filteredBuys.map(d=>buyCardHtml(d,p)).join('')}</div>`;
     }
-    if (otherRows.length && sigF!=='BUY') {
-      if (buyRows.length && sigF!=='SELL' && sigF!=='NEAR_SELL')
-        html += `<div class="section-head" style="margin-top:8px">All lots</div>`;
-      html += `<div class="section-wrap">${otherRows.map(d=>cardHtml(d,p)).join('')}</div>`;
+    if (filteredLots.length && sigF !== 'BUY') {
+      if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL')
+        html += `<div class="section-head" style="margin-top:8px">📋 All lots</div>`;
+      html += `<div class="section-wrap">${filteredLots.map(d=>lotCardHtml(d,p)).join('')}</div>`;
     }
-    if (!filtered.length) html = `<div class="no-data">No lots match the current filters.</div>`;
+    if (!filteredLots.length && !filteredBuys.length)
+      html = `<div class="no-data">No lots match the current filters.</div>`;
   }
-
   document.getElementById('tableArea').innerHTML = html;
 }
 
-// ── Event listeners ──────────────────────────────────────────────────────────
 document.getElementById('csvFile').addEventListener('change', e => {
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
     allRows = parseCSV(ev.target.result);
-    document.getElementById("lastUpdated").textContent = "Loaded from manual upload: " + file.name;
+    document.getElementById("lastUpdated").textContent = "Loaded: " + file.name;
     setStatus("✓ Manual CSV loaded", "success");
     setTimeout(() => document.getElementById("statusBar").style.display = "none", 3000);
     populateAcctFilter(); renderAll();
@@ -329,7 +383,6 @@ document.getElementById('csvFile').addEventListener('change', e => {
 document.getElementById('symFilter').addEventListener('input', renderAll);
 ['sellPct','buyPct','nearPct'].forEach(id=>document.getElementById(id).addEventListener('change', renderAll));
 
-// Auto-load on page open
 loadFromRepo();
 </script>
 </body>
