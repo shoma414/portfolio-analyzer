@@ -99,27 +99,48 @@ def extract_symbols(csv_content):
 def fetch_yfinance_data(symbols, fields=('regularMarketPrice',)):
     import yfinance as yf
     result = {}
-    batch_size = 50
-    for i in range(0, len(symbols), batch_size):
-        batch = symbols[i:i+batch_size]
-        try:
-            tickers = yf.Tickers(' '.join(batch))
-            for sym in batch:
-                try:
-                    info = tickers.tickers[sym].fast_info
-                    entry = {}
-                    if 'regularMarketPrice' in fields:
-                        entry['price'] = round(float(info.get('lastPrice') or info.get('regularMarketPrice') or 0), 4)
-                    if 'fiftyTwoWeekLow' in fields:
-                        entry['low52']  = round(float(info.get('fifty_two_week_low') or 0), 4)
-                        entry['high52'] = round(float(info.get('fifty_two_week_high') or 0), 4)
-                    if entry.get('price', 0) > 0:
-                        result[sym] = entry
-                        print(f"  {sym}: ${entry.get('price',0):.2f}")
-                except Exception as e:
-                    print(f"  {sym}: skip ({e})")
-        except Exception as e:
-            print(f"Batch error: {e}")
+    need_52w = 'fiftyTwoWeekLow' in fields
+
+    # For price only: use fast batch download (much faster)
+    # For 52W data: use individual ticker.info (only way to get 52W reliably)
+    if not need_52w:
+        batch_size = 50
+        for i in range(0, len(symbols), batch_size):
+            batch = symbols[i:i+batch_size]
+            try:
+                tickers = yf.Tickers(' '.join(batch))
+                for sym in batch:
+                    try:
+                        info = tickers.tickers[sym].fast_info
+                        price = float(info.last_price or 0)
+                        if price > 0:
+                            result[sym] = {'price': round(price, 4)}
+                            print(f"  {sym}: ${price:.2f}")
+                    except Exception as e:
+                        print(f"  {sym}: skip ({e})")
+            except Exception as e:
+                print(f"Batch error: {e}")
+    else:
+        # Need 52W data — use ticker.info for each symbol
+        for sym in symbols:
+            try:
+                t = yf.Ticker(sym)
+                info = t.info
+                price = float(info.get('regularMarketPrice') or info.get('currentPrice') or 0)
+                low52 = float(info.get('fiftyTwoWeekLow') or 0)
+                high52= float(info.get('fiftyTwoWeekHigh') or 0)
+                if price > 0 and low52 > 0:
+                    result[sym] = {
+                        'price': round(price, 4),
+                        'low52': round(low52, 4),
+                        'high52': round(high52, 4)
+                    }
+                    print(f"  {sym}: ${price:.2f} (52W low: ${low52:.2f})")
+                elif price > 0:
+                    result[sym] = {'price': round(price,4), 'low52': 0, 'high52': 0}
+                    print(f"  {sym}: ${price:.2f} (no 52W data)")
+            except Exception as e:
+                print(f"  {sym}: skip ({e})")
     return result
 
 # ── Step 6: Save all files ────────────────────────────────────────────────────
