@@ -116,6 +116,9 @@ input[type=file]{display:none;}
 <div id="tableArea"></div>
 
 <script>
+// Excluded/dead stocks — never shown in dashboard
+const EXCLUDED_SYMBOLS = ["UAVS", "IDEXQ", "AXLA", "APTX"];
+
 const GITHUB_USER = "shoma414";
 const GITHUB_REPO = "portfolio-analyzer";
 const CSV_URL  = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/portfolio.csv`;
@@ -163,6 +166,7 @@ function parseCSV(text) {
     if (!headers || cols[0] === 'Symbol') { headers = cols; continue; }
     if (cols.length < 7) continue;
     const obj = {}; headers.forEach((h,i) => obj[h] = (cols[i]||'').trim());
+    if (EXCLUDED_SYMBOLS.includes(obj.Symbol)) continue;
     rows.push(obj);
   }
   return rows;
