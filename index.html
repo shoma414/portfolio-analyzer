@@ -7,19 +7,18 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;padding:12px;}
-
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
 h1{font-size:18px;font-weight:700;}
-.last-updated{font-size:11px;color:#aaa;margin-bottom:12px;}
-
+.last-updated{font-size:11px;color:#aaa;margin-bottom:4px;}
+.price-updated{font-size:11px;color:#aaa;margin-bottom:12px;}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2d7a2d;margin-right:4px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 .status-bar{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
 .status-bar.loading{background:#e3eeff;color:#1a5fa8;display:block;}
 .status-bar.error{background:#fde8e8;color:#c0392b;display:block;}
 .status-bar.success{background:#e6f4e6;color:#2d7a2d;display:block;}
-
 .upload-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed #ccc;border-radius:12px;cursor:pointer;font-size:13px;background:#fff;color:#666;width:100%;margin-bottom:12px;}
 input[type=file]{display:none;}
-
 .controls{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .ctrl-group{display:flex;flex-direction:column;gap:4px;}
@@ -27,16 +26,12 @@ input[type=file]{display:none;}
 .ctrl-group select,.ctrl-group input{font-size:14px;padding:9px 10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a;width:100%;}
 .ctrl-group.full{grid-column:1/-1;}
 .pct-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .metric{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
 .metric-label{font-size:11px;color:#888;margin-bottom:4px;}
 .metric-val{font-size:22px;font-weight:700;}
 .sell{color:#2d7a2d;}.buy{color:#1a5fa8;}.warn{color:#a06000;}
-
 .section-head{font-size:12px;font-weight:700;color:#888;padding:6px 0 8px;border-bottom:1px solid #e8e8e8;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
-
-/* Regular lot card */
 .lot-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .lot-card.has-sell{border-left:3px solid #2d7a2d;}
 .lot-card.has-near{border-left:3px solid #a06000;}
@@ -55,8 +50,6 @@ input[type=file]{display:none;}
 .lot-field-val{font-size:14px;font-weight:500;}
 .pos{color:#2d7a2d;}.neg{color:#c0392b;}
 .lot-note{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:12px;color:#888;line-height:1.5;}
-
-/* Buy card — one per stock */
 .buy-card{background:#fff;border-left:3px solid #1a5fa8;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .buy-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
 .buy-sym{font-size:18px;font-weight:700;}
@@ -66,20 +59,21 @@ input[type=file]{display:none;}
 .buy-lots-table{width:100%;border-collapse:collapse;font-size:12px;}
 .buy-lots-table th{text-align:left;color:#aaa;font-weight:500;padding:3px 6px 3px 0;font-size:11px;}
 .buy-lots-table td{padding:4px 6px 4px 0;border-top:1px solid #f5f5f5;color:#1a1a1a;}
-
 .no-data{text-align:center;padding:2rem;color:#aaa;font-size:14px;}
 .section-wrap{margin-bottom:16px;}
 .refresh-btn{padding:8px 14px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;font-size:13px;cursor:pointer;color:#1a5fa8;font-weight:600;}
 .refresh-btn:active{background:#e3eeff;}
+.countdown{font-size:11px;color:#aaa;margin-left:6px;}
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>📊 Lot Analyzer</h1>
-  <button class="refresh-btn" onclick="loadFromRepo()">↻ Refresh</button>
+  <button class="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
 </div>
 <div class="last-updated" id="lastUpdated">Loading latest data...</div>
+<div class="price-updated" id="priceUpdated"></div>
 <div class="status-bar" id="statusBar"></div>
 
 <label class="upload-btn" for="csvFile">↑ Or upload CSV manually</label>
@@ -116,19 +110,25 @@ input[type=file]{display:none;}
 <div id="tableArea"></div>
 
 <script>
-// Excluded/dead stocks — never shown in dashboard
 const EXCLUDED_SYMBOLS = ["UAVS", "IDEXQ", "AXLA", "APTX"];
-
 const GITHUB_USER = "shoma414";
 const GITHUB_REPO = "portfolio-analyzer";
 const CSV_URL  = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/portfolio.csv`;
 const META_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/meta.json`;
+const YAHOO_PROXY = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=";
+const PRICE_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
+let allRows = [], processedData = { lots: [], buyGroups: [] };
+let livePrices = {}; // sym -> price
+let priceTimer = null, countdownTimer = null, nextRefreshAt = null;
+
+// ── Status bar ────────────────────────────────────────────────────────────────
 function setStatus(msg, type) {
   const bar = document.getElementById("statusBar");
   bar.textContent = msg; bar.className = "status-bar " + type;
 }
 
+// ── Load CSV from GitHub repo ─────────────────────────────────────────────────
 async function loadFromRepo() {
   setStatus("Fetching latest portfolio data...", "loading");
   try {
@@ -136,21 +136,75 @@ async function loadFromRepo() {
       const metaRes = await fetch(META_URL + "?t=" + Date.now());
       if (metaRes.ok) {
         const meta = await metaRes.json();
-        document.getElementById("lastUpdated").textContent = "Last updated: " + meta.last_updated;
+        document.getElementById("lastUpdated").textContent = "CSV updated: " + meta.last_updated;
       }
     } catch(e) {}
     const csvRes = await fetch(CSV_URL + "?t=" + Date.now());
     if (!csvRes.ok) throw new Error("CSV not found yet. Upload manually or wait for first automation run.");
     allRows = parseCSV(await csvRes.text());
-    populateAcctFilter(); renderAll();
-    setStatus("✓ Data loaded successfully", "success");
-    setTimeout(() => document.getElementById("statusBar").style.display = "none", 3000);
+    populateAcctFilter();
+    setStatus("✓ Portfolio loaded — fetching live prices...", "success");
+    await fetchLivePrices();
   } catch(err) {
     setStatus("⚠ " + err.message, "error");
     document.getElementById("lastUpdated").textContent = "Could not load from repo — upload CSV manually below";
+    renderAll();
   }
 }
 
+// ── Fetch live prices from Yahoo Finance ──────────────────────────────────────
+async function fetchLivePrices() {
+  const symbols = [...new Set(allRows.map(r => r.Symbol).filter(Boolean))];
+  if (!symbols.length) return;
+
+  // Yahoo Finance allows batching symbols with comma
+  const url = YAHOO_PROXY + symbols.join(',') + "&fields=regularMarketPrice&crumb=";
+  try {
+    // Use allorigins proxy to avoid CORS
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
+      `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${symbols.join(',')}`
+    )}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error("Price fetch failed");
+    const outer = await res.json();
+    const data = JSON.parse(outer.contents);
+    const quotes = data?.quoteResponse?.result || [];
+    quotes.forEach(q => {
+      if (q.regularMarketPrice) livePrices[q.symbol] = q.regularMarketPrice;
+    });
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById("priceUpdated").innerHTML =
+      `<span class="live-dot"></span>Live prices as of ${timeStr} — refreshing every 5 min`;
+    setStatus("✓ Live prices loaded", "success");
+    setTimeout(() => document.getElementById("statusBar").style.display = "none", 2000);
+  } catch(e) {
+    // Fall back to CSV prices silently
+    document.getElementById("priceUpdated").textContent = "Using CSV prices (live price fetch unavailable)";
+    setStatus("", "");
+    document.getElementById("statusBar").style.display = "none";
+  }
+  renderAll();
+  scheduleNextPriceRefresh();
+}
+
+// ── Schedule auto-refresh every 5 minutes ────────────────────────────────────
+function scheduleNextPriceRefresh() {
+  if (priceTimer) clearTimeout(priceTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
+  nextRefreshAt = Date.now() + PRICE_REFRESH_MS;
+  priceTimer = setTimeout(fetchLivePrices, PRICE_REFRESH_MS);
+}
+
+async function manualRefresh() {
+  if (priceTimer) clearTimeout(priceTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
+  if (!allRows.length) { await loadFromRepo(); return; }
+  setStatus("Refreshing live prices...", "loading");
+  await fetchLivePrices();
+}
+
+// ── CSV Parser ────────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const rows = []; let headers = null;
   for (const line of text.split('\n')) {
@@ -172,8 +226,8 @@ function parseCSV(text) {
   return rows;
 }
 
+// ── Strategy logic — uses live price if available, else CSV mark price ────────
 function processLots(rows, sellPct, buyPct, nearPct) {
-  // Find lowest cost per symbol+account group
   const groups = {};
   for (const r of rows) {
     const k = r.Symbol + '||' + r.ClientAccountID;
@@ -183,7 +237,9 @@ function processLots(rows, sellPct, buyPct, nearPct) {
 
   const lots = rows.map(r => {
     const sym = r.Symbol, acct = r.ClientAccountID;
-    const cost = parseFloat(r.CostBasisPrice), mark = parseFloat(r.MarkPrice);
+    const cost = parseFloat(r.CostBasisPrice);
+    // Use live price if available, else fall back to CSV mark price
+    const mark = livePrices[sym] || parseFloat(r.MarkPrice);
     const qty = parseFloat(r.Quantity), pnl = parseFloat(r.FifoPnlUnrealized);
     if (isNaN(cost)||isNaN(mark)||cost<=0) return null;
     const k = sym+'||'+acct;
@@ -191,23 +247,20 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     const buyTrigger = lowestCost*(1-buyPct/100);
     const buySignal = mark <= buyTrigger;
     const pct = ((mark-cost)/cost)*100;
+    // Recalculate P&L using live price
+    const livePnl = (mark - cost) * qty;
     let signal = 'OK';
     if (pct >= sellPct) signal = 'SELL';
     else if (pct >= nearPct) signal = 'NEAR_SELL';
-    return {sym, acct, cost, mark, qty, pnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal};
+    return {sym, acct, cost, mark, qty, pnl: livePnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal};
   }).filter(Boolean);
 
-  // Build buy groups — one entry per symbol+account
   const buyGroups = {};
   for (const lot of lots) {
     if (!lot.buySignal) continue;
     const k = lot.sym + '||' + lot.acct;
     if (!buyGroups[k]) {
-      buyGroups[k] = {
-        sym: lot.sym, acct: lot.acct,
-        mark: lot.mark, lowestCost: lot.lowestCost, buyTrigger: lot.buyTrigger,
-        lots: [], totalQty: 0, totalPnl: 0
-      };
+      buyGroups[k] = { sym:lot.sym, acct:lot.acct, mark:lot.mark, lowestCost:lot.lowestCost, buyTrigger:lot.buyTrigger, lots:[], totalQty:0, totalPnl:0 };
     }
     buyGroups[k].lots.push(lot);
     buyGroups[k].totalQty += lot.qty;
@@ -216,8 +269,6 @@ function processLots(rows, sellPct, buyPct, nearPct) {
 
   return { lots, buyGroups: Object.values(buyGroups) };
 }
-
-let allRows = [], processedData = { lots: [], buyGroups: [] };
 
 function getP() {
   return {
@@ -248,22 +299,19 @@ function applyFilters(lots, buyGroups) {
   const acctF = document.getElementById('acctFilter').value.trim();
   const sigF  = document.getElementById('signalFilter').value;
   const symF  = document.getElementById('symFilter').value.trim().toUpperCase();
-
   const filteredLots = lots.filter(d => {
     if (acctF && d.acct !== acctF) return false;
     if (symF  && !d.sym.includes(symF)) return false;
-    if (sigF === 'BUY') return false; // buy shown separately
+    if (sigF === 'BUY') return false;
     if (sigF === 'SELL') return d.signal === 'SELL';
     if (sigF === 'NEAR_SELL') return d.signal === 'NEAR_SELL';
     return true;
   });
-
   const filteredBuys = (sigF === 'SELL' || sigF === 'NEAR_SELL') ? [] : buyGroups.filter(d => {
     if (acctF && d.acct !== acctF) return false;
     if (symF  && !d.sym.includes(symF)) return false;
     return true;
   });
-
   return { filteredLots, filteredBuys };
 }
 
@@ -280,14 +328,13 @@ function buyCardHtml(d, p) {
       <td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td>
     </tr>`;
   }).join('');
-
   return `<div class="buy-card">
     <div class="buy-card-top">
       <div><div class="buy-sym">${d.sym}</div><div class="buy-acct">${d.acct}</div></div>
       <span class="badge badge-buy">Buy ↓</span>
     </div>
     <div class="buy-summary">
-      <div class="lot-field"><span class="lot-field-label">Mark price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Live price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Lowest lot</span><span class="lot-field-val">$${d.lowestCost.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Drop from lowest</span><span class="lot-field-val neg">${dropPct}%</span></div>
       <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
@@ -306,8 +353,8 @@ function lotCardHtml(d, p) {
   const pctStr = (d.pct>=0?'+':'')+d.pct.toFixed(1)+'%';
   const pnlStr = (d.pnl>=0?'+':'')+'$'+Math.abs(d.pnl).toFixed(0);
   let badge = '', cardClass = 'lot-card';
-  if (d.signal==='SELL')      { badge = `<span class="badge badge-sell">Sell ↑</span>`; cardClass += ' has-sell'; }
-  else if(d.signal==='NEAR_SELL') { badge = `<span class="badge badge-near">Near sell</span>`; cardClass += ' has-near'; }
+  if (d.signal==='SELL')           { badge = `<span class="badge badge-sell">Sell ↑</span>`; cardClass += ' has-sell'; }
+  else if(d.signal==='NEAR_SELL')  { badge = `<span class="badge badge-near">Near sell</span>`; cardClass += ' has-near'; }
   else badge = `<span class="badge badge-ok">Hold</span>`;
   const note = d.signal==='SELL' ? `Up ${d.pct.toFixed(1)}% from cost $${d.cost.toFixed(2)}`
     : d.signal==='NEAR_SELL' ? `${(p.sellPct-d.pct).toFixed(1)}% away from sell target`
@@ -320,7 +367,7 @@ function lotCardHtml(d, p) {
     <div class="lot-grid">
       <div class="lot-field"><span class="lot-field-label">Qty</span><span class="lot-field-val">${d.qty}</span></div>
       <div class="lot-field"><span class="lot-field-label">Cost basis</span><span class="lot-field-val">$${d.cost.toFixed(2)}</span></div>
-      <div class="lot-field"><span class="lot-field-label">Mark price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Live price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Change</span><span class="lot-field-val ${d.pct>=0?'pos':'neg'}">${pctStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Unreal. P&L</span><span class="lot-field-val ${d.pnl>=0?'pos':'neg'}">${pnlStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Opened</span><span class="lot-field-val">${fmtDate(d.date)}</span></div>
@@ -334,31 +381,22 @@ function renderAll() {
   processedData = processLots(allRows, p.sellPct, p.buyPct, p.nearPct);
   const sigF = document.getElementById('signalFilter').value;
   const { filteredLots, filteredBuys } = applyFilters(processedData.lots, processedData.buyGroups);
-
   const sells = filteredLots.filter(d=>d.signal==='SELL').length;
   const nears = filteredLots.filter(d=>d.signal==='NEAR_SELL').length;
-
   document.getElementById('summaryGrid').innerHTML = `
     <div class="metric"><div class="metric-label">Lots shown</div><div class="metric-val">${filteredLots.length}</div></div>
     <div class="metric"><div class="metric-label">Sell signals ≥${p.sellPct}%</div><div class="metric-val sell">${sells}</div></div>
     <div class="metric"><div class="metric-label">Near sell ≥${p.nearPct}%</div><div class="metric-val warn">${nears}</div></div>
     <div class="metric"><div class="metric-label">Buy opportunities</div><div class="metric-val buy">${filteredBuys.length}</div></div>`;
-
-  filteredLots.sort((a,b)=>{
-    const o={SELL:0,NEAR_SELL:1,OK:2};
-    if(o[a.signal]!==o[b.signal]) return o[a.signal]-o[b.signal];
-    return a.sym.localeCompare(b.sym);
-  });
+  filteredLots.sort((a,b)=>{ const o={SELL:0,NEAR_SELL:1,OK:2}; if(o[a.signal]!==o[b.signal]) return o[a.signal]-o[b.signal]; return a.sym.localeCompare(b.sym); });
   filteredBuys.sort((a,b)=>a.sym.localeCompare(b.sym));
-
   let html = '';
   if (!allRows.length) {
     html = `<div class="no-data">Loading data... if this persists, upload CSV manually above.</div>`;
   } else {
-    if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL') {
+    if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL')
       html += `<div class="section-head">🔵 Buy opportunities — ${filteredBuys.length} stock${filteredBuys.length>1?'s':''}</div>
                <div class="section-wrap">${filteredBuys.map(d=>buyCardHtml(d,p)).join('')}</div>`;
-    }
     if (filteredLots.length && sigF !== 'BUY') {
       if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL')
         html += `<div class="section-head" style="margin-top:8px">📋 All lots</div>`;
@@ -373,12 +411,12 @@ function renderAll() {
 document.getElementById('csvFile').addEventListener('change', e => {
   const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
     allRows = parseCSV(ev.target.result);
     document.getElementById("lastUpdated").textContent = "Loaded: " + file.name;
-    setStatus("✓ Manual CSV loaded", "success");
-    setTimeout(() => document.getElementById("statusBar").style.display = "none", 3000);
-    populateAcctFilter(); renderAll();
+    setStatus("✓ CSV loaded — fetching live prices...", "success");
+    populateAcctFilter();
+    await fetchLivePrices();
   };
   reader.readAsText(file);
 });
