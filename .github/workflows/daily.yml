@@ -1,1 +1,41 @@
+name: Daily Portfolio Update
 
+on:
+  schedule:
+    # Runs every day at 08:00 UAE time (04:00 UTC)
+    - cron: "0 4 * * 1-5"
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+jobs:
+  fetch-and-update:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch latest IBKR CSV from Outlook
+        env:
+          OUTLOOK_CLIENT_ID:     ${{ secrets.OUTLOOK_CLIENT_ID }}
+          OUTLOOK_CLIENT_SECRET: ${{ secrets.OUTLOOK_CLIENT_SECRET }}
+          OUTLOOK_EMAIL:         ${{ secrets.OUTLOOK_EMAIL }}
+        run: python fetch_csv.py
+
+      - name: Commit and push updated CSV
+        run: |
+          git config user.name  "portfolio-bot"
+          git config user.email "bot@portfolio-analyzer"
+          git add data/portfolio.csv data/meta.json
+          git diff --cached --quiet || git commit -m "Auto-update: portfolio data $(date -u '+%Y-%m-%d')"
+          git push
