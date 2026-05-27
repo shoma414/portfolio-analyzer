@@ -3,35 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Lot Analyzer</title>
+<title>Portfolio Analyzer</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;padding:12px;}
+
+/* ── Tabs ── */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+.tab-btn{padding:11px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:#888;transition:all 0.15s;}
+.tab-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+
+/* ── Header ── */
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-h1{font-size:18px;font-weight:700;}
+h1{font-size:17px;font-weight:700;}
 .last-updated{font-size:11px;color:#aaa;margin-bottom:4px;}
 .price-updated{font-size:11px;color:#aaa;margin-bottom:12px;}
 .live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2d7a2d;margin-right:4px;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ── Status ── */
 .status-bar{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:12px;display:none;}
 .status-bar.loading{background:#e3eeff;color:#1a5fa8;display:block;}
 .status-bar.error{background:#fde8e8;color:#c0392b;display:block;}
 .status-bar.success{background:#e6f4e6;color:#2d7a2d;display:block;}
+
+/* ── Controls ── */
 .upload-btn{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed #ccc;border-radius:12px;cursor:pointer;font-size:13px;background:#fff;color:#666;width:100%;margin-bottom:12px;}
 input[type=file]{display:none;}
 .controls{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .ctrl-group{display:flex;flex-direction:column;gap:4px;}
 .ctrl-group label{font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;}
-.ctrl-group select,.ctrl-group input{font-size:14px;padding:9px 10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a;width:100%;}
+.ctrl-group select,.ctrl-group input[type=number],.ctrl-group input[type=text]{font-size:14px;padding:9px 10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a;width:100%;}
 .ctrl-group.full{grid-column:1/-1;}
 .pct-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── Summary ── */
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 .metric{background:#fff;border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.07);}
 .metric-label{font-size:11px;color:#888;margin-bottom:4px;}
 .metric-val{font-size:22px;font-weight:700;}
-.sell{color:#2d7a2d;}.buy{color:#1a5fa8;}.warn{color:#a06000;}
+.c-sell{color:#2d7a2d;}.c-buy{color:#1a5fa8;}.c-warn{color:#a06000;}.c-wait{color:#aaa;}
+
+/* ── Section heads ── */
 .section-head{font-size:12px;font-weight:700;color:#888;padding:6px 0 8px;border-bottom:1px solid #e8e8e8;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* ── Lot cards ── */
 .lot-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .lot-card.has-sell{border-left:3px solid #2d7a2d;}
 .lot-card.has-near{border-left:3px solid #a06000;}
@@ -50,6 +67,10 @@ input[type=file]{display:none;}
 .lot-field-val{font-size:14px;font-weight:500;}
 .pos{color:#2d7a2d;}.neg{color:#c0392b;}
 .lot-note{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:12px;color:#888;line-height:1.5;}
+.tag-live{font-size:9px;font-weight:700;background:#e6f4e6;color:#2d7a2d;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+.tag-csv{font-size:9px;font-weight:700;background:#f2f2f2;color:#888;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+
+/* ── Buy cards ── */
 .buy-card{background:#fff;border-left:3px solid #1a5fa8;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .buy-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
 .buy-sym{font-size:18px;font-weight:700;}
@@ -59,80 +80,187 @@ input[type=file]{display:none;}
 .buy-lots-table{width:100%;border-collapse:collapse;font-size:12px;}
 .buy-lots-table th{text-align:left;color:#aaa;font-weight:500;padding:3px 6px 3px 0;font-size:11px;}
 .buy-lots-table td{padding:4px 6px 4px 0;border-top:1px solid #f5f5f5;color:#1a1a1a;}
+
+/* ── Watchlist cards ── */
+.wl-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
+.wl-card.zone-buy{border-left:3px solid #2d7a2d;}
+.wl-card.zone-watch{border-left:3px solid #a06000;}
+.wl-card.zone-wait{border-left:3px solid #ddd;}
+.wl-card.loading{opacity:0.5;}
+.wl-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.wl-sym{font-size:18px;font-weight:700;}
+.wl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px;}
+.badge-zone-buy{background:#e6f4e6;color:#2d7a2d;}
+.badge-zone-watch{background:#fff3e0;color:#a06000;}
+.badge-zone-wait{background:#f2f2f2;color:#888;}
+
+/* ── Watchlist controls ── */
+.wl-add-row{display:flex;gap:8px;margin-bottom:12px;}
+.wl-add-row input{flex:1;font-size:14px;padding:10px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a;text-transform:uppercase;}
+.wl-add-row button{padding:10px 16px;border-radius:8px;border:none;background:#1a1a1a;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+.wl-add-row button:active{background:#444;}
+.wl-filter-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.zone-filter-btn{padding:8px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#888;text-align:center;}
+.zone-filter-btn.active-buy{background:#e6f4e6;color:#2d7a2d;border-color:#2d7a2d;}
+.zone-filter-btn.active-watch{background:#fff3e0;color:#a06000;border-color:#a06000;}
+.zone-filter-btn.active-all{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+
+/* ── Misc ── */
 .no-data{text-align:center;padding:2rem;color:#aaa;font-size:14px;}
 .section-wrap{margin-bottom:16px;}
 .refresh-btn{padding:8px 14px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;font-size:13px;cursor:pointer;color:#1a5fa8;font-weight:600;}
 .refresh-btn:active{background:#e3eeff;}
-.countdown{font-size:11px;color:#aaa;margin-left:6px;}
-.tag-live{font-size:9px;font-weight:700;background:#e6f4e6;color:#2d7a2d;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
-.tag-csv{font-size:9px;font-weight:700;background:#f2f2f2;color:#888;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+.remove-btn{font-size:11px;color:#aaa;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;margin-left:4px;}
+.remove-btn:active{background:#fde8e8;color:#c0392b;}
+.wl-pct-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📊 Lot Analyzer</h1>
-  <button class="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
-</div>
-<div class="last-updated" id="lastUpdated">Loading latest data...</div>
-<div class="price-updated" id="priceUpdated"></div>
-<div class="status-bar" id="statusBar"></div>
-
-<label class="upload-btn" for="csvFile">↑ Or upload CSV manually</label>
-<input type="file" id="csvFile" accept=".csv">
-
-<div class="controls">
-  <div class="ctrl-row">
-    <div class="ctrl-group">
-      <label>Account</label>
-      <select id="acctFilter"><option value="">All accounts</option></select>
-    </div>
-    <div class="ctrl-group">
-      <label>Signal</label>
-      <select id="signalFilter">
-        <option value="">All</option>
-        <option value="SELL">Sell signals</option>
-        <option value="NEAR_SELL">Near sell</option>
-        <option value="BUY">Buy signals</option>
-      </select>
-    </div>
-  </div>
-  <div class="ctrl-group full">
-    <label>Symbol search</label>
-    <input type="text" id="symFilter" placeholder="e.g. ORCL, ZTS">
-  </div>
-  <div class="pct-row">
-    <div class="ctrl-group"><label>Sell %</label><input type="number" id="sellPct" value="10" min="1" max="100"></div>
-    <div class="ctrl-group"><label>Near sell %</label><input type="number" id="nearPct" value="7" min="1" max="100"></div>
-    <div class="ctrl-group"><label>Buy drop %</label><input type="number" id="buyPct" value="5" min="1" max="100"></div>
-  </div>
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('lots')">📊 My Lots</button>
+  <button class="tab-btn" onclick="switchTab('watchlist')">⭐ Watchlist</button>
 </div>
 
-<div class="summary-grid" id="summaryGrid"></div>
-<div id="tableArea"></div>
+<!-- ══════════════════════════════════════════════════
+     TAB 1: MY LOTS
+═══════════════════════════════════════════════════ -->
+<div id="tab-lots">
+  <div class="header">
+    <h1>My Lot Positions</h1>
+    <button class="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
+  </div>
+  <div class="last-updated" id="lastUpdated">Loading...</div>
+  <div class="price-updated" id="priceUpdated"></div>
+  <div class="status-bar" id="statusBar"></div>
+
+  <label class="upload-btn" for="csvFile">↑ Or upload CSV manually</label>
+  <input type="file" id="csvFile" accept=".csv">
+
+  <div class="controls">
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Account</label>
+        <select id="acctFilter"><option value="">All accounts</option></select>
+      </div>
+      <div class="ctrl-group">
+        <label>Signal</label>
+        <select id="signalFilter">
+          <option value="">All</option>
+          <option value="SELL">Sell signals</option>
+          <option value="NEAR_SELL">Near sell</option>
+          <option value="BUY">Buy signals</option>
+        </select>
+      </div>
+    </div>
+    <div class="ctrl-group full">
+      <label>Symbol search</label>
+      <input type="text" id="symFilter" placeholder="e.g. ORCL, ZTS">
+    </div>
+    <div class="pct-row">
+      <div class="ctrl-group"><label>Sell %</label><input type="number" id="sellPct" value="10" min="1" max="100"></div>
+      <div class="ctrl-group"><label>Near sell %</label><input type="number" id="nearPct" value="7" min="1" max="100"></div>
+      <div class="ctrl-group"><label>Buy drop %</label><input type="number" id="buyPct" value="5" min="1" max="100"></div>
+    </div>
+  </div>
+
+  <div class="summary-grid" id="summaryGrid"></div>
+  <div id="tableArea"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TAB 2: WATCHLIST
+═══════════════════════════════════════════════════ -->
+<div id="tab-watchlist" style="display:none">
+  <div class="header">
+    <h1>Halal Watchlist</h1>
+    <button class="refresh-btn" onclick="refreshWatchlist()">↻ Refresh</button>
+  </div>
+  <div class="price-updated" id="wlPriceUpdated">Loading prices...</div>
+
+  <!-- Add symbol -->
+  <div class="wl-add-row">
+    <input type="text" id="wlAddInput" placeholder="Add symbol e.g. AAPL" maxlength="10">
+    <button onclick="addWatchlistSymbol()">+ Add</button>
+  </div>
+
+  <!-- Zone thresholds -->
+  <div class="controls" style="margin-bottom:12px;">
+    <div class="wl-pct-row">
+      <div class="ctrl-group">
+        <label>🟢 Buy zone (52W low ×)</label>
+        <input type="number" id="buyZonePct" value="105" min="100" max="200" step="1">
+      </div>
+      <div class="ctrl-group">
+        <label>🟡 Watch zone (52W low ×)</label>
+        <input type="number" id="watchZonePct" value="110" min="100" max="200" step="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone filter buttons -->
+  <div class="wl-filter-row">
+    <button class="zone-filter-btn active-all" id="zfAll"   onclick="setZoneFilter('all')">All</button>
+    <button class="zone-filter-btn" id="zfBuy"   onclick="setZoneFilter('buy')">🟢 Buy zone</button>
+    <button class="zone-filter-btn" id="zfWatch" onclick="setZoneFilter('watch')">🟡 Watch zone</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid" id="wlSummaryGrid"></div>
+  <div id="wlArea"></div>
+</div>
 
 <script>
+// ══════════════════════════════════════════════════
+// SHARED STATE
+// ══════════════════════════════════════════════════
 const EXCLUDED_SYMBOLS = ["UAVS", "IDEXQ.OLD", "AXLA", "APTX.OLD"];
 const GITHUB_USER = "shoma414";
 const GITHUB_REPO = "portfolio-analyzer";
 const CSV_URL    = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/portfolio.csv`;
 const META_URL   = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/meta.json`;
 const PRICES_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/prices.json`;
-const PRICE_REFRESH_MS = 10 * 60 * 1000; // 10 minutes
+const PRICE_REFRESH_MS = 10 * 60 * 1000;
 
 let allRows = [], processedData = { lots: [], buyGroups: [] };
-let livePrices = {}; // sym -> price
-let priceTimer = null, countdownTimer = null, nextRefreshAt = null;
+let livePrices = {};
+let priceTimer = null;
+let currentTab = 'lots';
+let zoneFilter = 'all';
 
-// ── Status bar ────────────────────────────────────────────────────────────────
+// Watchlist storage key
+const WL_KEY = 'watchlist_symbols';
+
+// Default watchlist
+const DEFAULT_WATCHLIST = ["NEM","WDC","STX","NXPI","SLV","AMKR","RL","PEP","ENFR","ACN","ODFL","CHRW","BIRK","SAP","SEZL","EFX","PANW","ADI","B","HIMS","SNY","BMNR","YOU","ISRG","VRSN","SMGB","JKHY","GEV","ECL","SYK","FICO","DKS","GRMN","LLY","SPGI","FTNT","DECK","PODD","WSM","PH","PAYX","ROK","CROX","GILD","TMO","ZTS","AOS","LTRX","NIO","CPRT","APP","DHI","WST","CL","NUTX","LIN","NOW","NVO","CELH","CLX","KVUE","ABBV","ADM","SHOP","TTD","GSK","SWKS","LOW","ABT","FIX","VLO","ANET","ON","CNQ","UNP","ONON","CTRE","POOL","WULF","DVN","FAST","UBER","APD","KMB","MSCI","CUBE","MAA","ADP","EOG","WM","CMI","KO","RIO","SMCI","IBM","WSO","KLAC","AMAT","GOOGL","ADSK","CRM","PG","ELF","QCOM","CAT","MRK","LULU","AVGO","MDLZ","ULTA","ASML","LRCX","V","CVX","COP","MA","GPC","HSY","ORCL","MSTR","MDT","LEN","TXN","TSLA","AAPL","NVDA","XOM","ARM","ADBE","AMD","SBUX","META","PATH","SLB","BTC-USD","HD","NKE","TSM","CRWD","MMM","AEO","MU","JNJ","UPS","ATKR","MSFT","CSCO"];
+
+// Watchlist data: { sym -> {price, low52, high52, loaded} }
+let wlData = {};
+
+// ══════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-lots').style.display = tab === 'lots' ? 'block' : 'none';
+  document.getElementById('tab-watchlist').style.display = tab === 'watchlist' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && tab==='lots') || (i===1 && tab==='watchlist'));
+  });
+  if (tab === 'watchlist' && Object.keys(wlData).length === 0) refreshWatchlist();
+}
+
+// ══════════════════════════════════════════════════
+// LOTS TAB
+// ══════════════════════════════════════════════════
 function setStatus(msg, type) {
   const bar = document.getElementById("statusBar");
   bar.textContent = msg; bar.className = "status-bar " + type;
 }
 
-// ── Load CSV from GitHub repo ─────────────────────────────────────────────────
 async function loadFromRepo() {
-  setStatus("Fetching latest portfolio data...", "loading");
+  setStatus("Fetching portfolio data...", "loading");
   try {
     try {
       const metaRes = await fetch(META_URL + "?t=" + Date.now());
@@ -142,19 +270,18 @@ async function loadFromRepo() {
       }
     } catch(e) {}
     const csvRes = await fetch(CSV_URL + "?t=" + Date.now());
-    if (!csvRes.ok) throw new Error("CSV not found yet. Upload manually or wait for first automation run.");
+    if (!csvRes.ok) throw new Error("CSV not found yet. Upload manually or wait for first run.");
     allRows = parseCSV(await csvRes.text());
     populateAcctFilter();
     setStatus("✓ Portfolio loaded — fetching live prices...", "success");
     await fetchLivePrices();
   } catch(err) {
     setStatus("⚠ " + err.message, "error");
-    document.getElementById("lastUpdated").textContent = "Could not load from repo — upload CSV manually below";
+    document.getElementById("lastUpdated").textContent = "Could not load — upload CSV manually below";
     renderAll();
   }
 }
 
-// ── Fetch live prices from Yahoo Finance ──────────────────────────────────────
 async function fetchLivePrices() {
   try {
     const res = await fetch(PRICES_URL + "?t=" + Date.now());
@@ -163,36 +290,25 @@ async function fetchLivePrices() {
     if (data.prices && Object.keys(data.prices).length > 0) {
       livePrices = data.prices;
       document.getElementById("priceUpdated").innerHTML =
-        `<span class="live-dot"></span>Live prices as of ${data.last_updated} — auto-refreshes every 10 min`;
+        `<span class="live-dot"></span>Live prices as of ${data.last_updated} — refreshes every 10 min`;
       setStatus("✓ Live prices loaded", "success");
       setTimeout(() => document.getElementById("statusBar").style.display = "none", 2000);
-    } else {
-      throw new Error("No prices in file");
-    }
+    } else throw new Error("No prices");
   } catch(e) {
-    document.getElementById("priceUpdated").textContent = "⚠ Using CSV prices — live prices update at 2 PM UAE daily";
+    document.getElementById("priceUpdated").textContent = "Using CSV prices — live prices update at 2 PM UAE daily";
   }
   renderAll();
-  scheduleNextPriceRefresh();
-}
-
-// ── Schedule auto-refresh every 5 minutes ────────────────────────────────────
-function scheduleNextPriceRefresh() {
   if (priceTimer) clearTimeout(priceTimer);
-  if (countdownTimer) clearInterval(countdownTimer);
-  nextRefreshAt = Date.now() + PRICE_REFRESH_MS;
   priceTimer = setTimeout(fetchLivePrices, PRICE_REFRESH_MS);
 }
 
 async function manualRefresh() {
   if (priceTimer) clearTimeout(priceTimer);
-  if (countdownTimer) clearInterval(countdownTimer);
   if (!allRows.length) { await loadFromRepo(); return; }
-  setStatus("Refreshing live prices...", "loading");
+  setStatus("Refreshing...", "loading");
   await fetchLivePrices();
 }
 
-// ── CSV Parser ────────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const rows = []; let headers = null;
   for (const line of text.split('\n')) {
@@ -214,7 +330,6 @@ function parseCSV(text) {
   return rows;
 }
 
-// ── Strategy logic — uses live price if available, else CSV mark price ────────
 function processLots(rows, sellPct, buyPct, nearPct) {
   const groups = {};
   for (const r of rows) {
@@ -222,11 +337,9 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     const cost = parseFloat(r.CostBasisPrice);
     if (!isNaN(cost) && cost > 0) { if (!groups[k]) groups[k] = []; groups[k].push(cost); }
   }
-
   const lots = rows.map(r => {
     const sym = r.Symbol, acct = r.ClientAccountID;
     const cost = parseFloat(r.CostBasisPrice);
-    // Use live price if available, else fall back to CSV mark price
     const isLive = !!livePrices[sym];
     const mark = livePrices[sym] || parseFloat(r.MarkPrice);
     const qty = parseFloat(r.Quantity), pnl = parseFloat(r.FifoPnlUnrealized);
@@ -236,26 +349,22 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     const buyTrigger = lowestCost*(1-buyPct/100);
     const buySignal = mark <= buyTrigger;
     const pct = ((mark-cost)/cost)*100;
-    // Recalculate P&L using live price
-    const livePnl = (mark - cost) * qty;
+    const livePnl = (mark-cost)*qty;
     let signal = 'OK';
     if (pct >= sellPct) signal = 'SELL';
     else if (pct >= nearPct) signal = 'NEAR_SELL';
-    return {sym, acct, cost, mark, qty, pnl: livePnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal, isLive};
+    return {sym,acct,cost,mark,qty,pnl:livePnl,pct,date:r.OpenDateTime,signal,lowestCost,buyTrigger,buySignal,isLive};
   }).filter(Boolean);
 
   const buyGroups = {};
   for (const lot of lots) {
     if (!lot.buySignal) continue;
-    const k = lot.sym + '||' + lot.acct;
-    if (!buyGroups[k]) {
-      buyGroups[k] = { sym:lot.sym, acct:lot.acct, mark:lot.mark, lowestCost:lot.lowestCost, buyTrigger:lot.buyTrigger, lots:[], totalQty:0, totalPnl:0 };
-    }
+    const k = lot.sym+'||'+lot.acct;
+    if (!buyGroups[k]) buyGroups[k] = {sym:lot.sym,acct:lot.acct,mark:lot.mark,lowestCost:lot.lowestCost,buyTrigger:lot.buyTrigger,lots:[],totalQty:0,totalPnl:0,isLive:lot.isLive};
     buyGroups[k].lots.push(lot);
     buyGroups[k].totalQty += lot.qty;
     buyGroups[k].totalPnl += lot.pnl;
   }
-
   return { lots, buyGroups: Object.values(buyGroups) };
 }
 
@@ -272,11 +381,7 @@ function populateAcctFilter() {
   const sel = document.getElementById('acctFilter');
   const prev = sel.value;
   sel.innerHTML = '<option value="">All accounts</option>';
-  accts.forEach(a => {
-    const o = document.createElement('option');
-    o.value = a; o.textContent = a; if(a===prev) o.selected=true;
-    sel.appendChild(o);
-  });
+  accts.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; if(a===prev)o.selected=true; sel.appendChild(o); });
 }
 
 function fmtDate(dt) {
@@ -291,12 +396,12 @@ function applyFilters(lots, buyGroups) {
   const filteredLots = lots.filter(d => {
     if (acctF && d.acct !== acctF) return false;
     if (symF  && !d.sym.includes(symF)) return false;
-    if (sigF === 'BUY') return false;
-    if (sigF === 'SELL') return d.signal === 'SELL';
-    if (sigF === 'NEAR_SELL') return d.signal === 'NEAR_SELL';
+    if (sigF==='BUY') return false;
+    if (sigF==='SELL') return d.signal==='SELL';
+    if (sigF==='NEAR_SELL') return d.signal==='NEAR_SELL';
     return true;
   });
-  const filteredBuys = (sigF === 'SELL' || sigF === 'NEAR_SELL') ? [] : buyGroups.filter(d => {
+  const filteredBuys = (sigF==='SELL'||sigF==='NEAR_SELL') ? [] : buyGroups.filter(d => {
     if (acctF && d.acct !== acctF) return false;
     if (symF  && !d.sym.includes(symF)) return false;
     return true;
@@ -305,25 +410,20 @@ function applyFilters(lots, buyGroups) {
 }
 
 function buyCardHtml(d, p) {
-  const dropPct = (((d.mark - d.lowestCost) / d.lowestCost) * 100).toFixed(1);
+  const dropPct = (((d.mark-d.lowestCost)/d.lowestCost)*100).toFixed(1);
   const lotsRows = d.lots.map(l => {
-    const lPct = (((l.mark - l.cost) / l.cost) * 100).toFixed(1);
-    const lPnl = (l.pnl >= 0 ? '+' : '') + '$' + Math.abs(l.pnl).toFixed(0);
-    return `<tr>
-      <td>${fmtDate(l.date)}</td>
-      <td>$${l.cost.toFixed(2)}</td>
-      <td>${l.qty}</td>
-      <td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td>
-      <td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td>
-    </tr>`;
+    const lPct=(((l.mark-l.cost)/l.cost)*100).toFixed(1);
+    const lPnl=(l.pnl>=0?'+':'')+'$'+Math.abs(l.pnl).toFixed(0);
+    return `<tr><td>${fmtDate(l.date)}</td><td>$${l.cost.toFixed(2)}</td><td>${l.qty}</td><td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td><td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td></tr>`;
   }).join('');
+  const priceTag = d.isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>';
   return `<div class="buy-card">
     <div class="buy-card-top">
       <div><div class="buy-sym">${d.sym}</div><div class="buy-acct">${d.acct}</div></div>
       <span class="badge badge-buy">Buy ↓</span>
     </div>
     <div class="buy-summary">
-      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${d.lots[0].isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${priceTag}</span></div>
       <div class="lot-field"><span class="lot-field-label">Lowest lot</span><span class="lot-field-val">$${d.lowestCost.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Drop from lowest</span><span class="lot-field-val neg">${dropPct}%</span></div>
       <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
@@ -339,15 +439,14 @@ function buyCardHtml(d, p) {
 }
 
 function lotCardHtml(d, p) {
-  const pctStr = (d.pct>=0?'+':'')+d.pct.toFixed(1)+'%';
-  const pnlStr = (d.pnl>=0?'+':'')+'$'+Math.abs(d.pnl).toFixed(0);
-  let badge = '', cardClass = 'lot-card';
-  if (d.signal==='SELL')           { badge = `<span class="badge badge-sell">Sell ↑</span>`; cardClass += ' has-sell'; }
-  else if(d.signal==='NEAR_SELL')  { badge = `<span class="badge badge-near">Near sell</span>`; cardClass += ' has-near'; }
-  else badge = `<span class="badge badge-ok">Hold</span>`;
-  const note = d.signal==='SELL' ? `Up ${d.pct.toFixed(1)}% from cost $${d.cost.toFixed(2)}`
-    : d.signal==='NEAR_SELL' ? `${(p.sellPct-d.pct).toFixed(1)}% away from sell target`
-    : '';
+  const pctStr=(d.pct>=0?'+':'')+d.pct.toFixed(1)+'%';
+  const pnlStr=(d.pnl>=0?'+':'')+'$'+Math.abs(d.pnl).toFixed(0);
+  let badge='', cardClass='lot-card';
+  if(d.signal==='SELL'){badge=`<span class="badge badge-sell">Sell ↑</span>`;cardClass+=' has-sell';}
+  else if(d.signal==='NEAR_SELL'){badge=`<span class="badge badge-near">Near sell</span>`;cardClass+=' has-near';}
+  else badge=`<span class="badge badge-ok">Hold</span>`;
+  const note=d.signal==='SELL'?`Up ${d.pct.toFixed(1)}% from cost $${d.cost.toFixed(2)}`:d.signal==='NEAR_SELL'?`${(p.sellPct-d.pct).toFixed(1)}% away from sell target`:'';
+  const priceTag=d.isLive?'<span class="tag-live">LIVE</span>':'<span class="tag-csv">CSV</span>';
   return `<div class="${cardClass}">
     <div class="lot-card-top">
       <div><div class="lot-sym">${d.sym}</div><div class="lot-acct">${d.acct}</div></div>
@@ -356,12 +455,12 @@ function lotCardHtml(d, p) {
     <div class="lot-grid">
       <div class="lot-field"><span class="lot-field-label">Qty</span><span class="lot-field-val">${d.qty}</span></div>
       <div class="lot-field"><span class="lot-field-label">Cost basis</span><span class="lot-field-val">$${d.cost.toFixed(2)}</span></div>
-      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${d.isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${priceTag}</span></div>
       <div class="lot-field"><span class="lot-field-label">Change</span><span class="lot-field-val ${d.pct>=0?'pos':'neg'}">${pctStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Unreal. P&L</span><span class="lot-field-val ${d.pnl>=0?'pos':'neg'}">${pnlStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Opened</span><span class="lot-field-val">${fmtDate(d.date)}</span></div>
     </div>
-    ${note ? `<div class="lot-note">${note}</div>` : ''}
+    ${note?`<div class="lot-note">${note}</div>`:''}
   </div>`;
 }
 
@@ -370,50 +469,245 @@ function renderAll() {
   processedData = processLots(allRows, p.sellPct, p.buyPct, p.nearPct);
   const sigF = document.getElementById('signalFilter').value;
   const { filteredLots, filteredBuys } = applyFilters(processedData.lots, processedData.buyGroups);
-  const sells = filteredLots.filter(d=>d.signal==='SELL').length;
-  const nears = filteredLots.filter(d=>d.signal==='NEAR_SELL').length;
-  document.getElementById('summaryGrid').innerHTML = `
+  const sells=filteredLots.filter(d=>d.signal==='SELL').length;
+  const nears=filteredLots.filter(d=>d.signal==='NEAR_SELL').length;
+  document.getElementById('summaryGrid').innerHTML=`
     <div class="metric"><div class="metric-label">Lots shown</div><div class="metric-val">${filteredLots.length}</div></div>
-    <div class="metric"><div class="metric-label">Sell signals ≥${p.sellPct}%</div><div class="metric-val sell">${sells}</div></div>
-    <div class="metric"><div class="metric-label">Near sell ≥${p.nearPct}%</div><div class="metric-val warn">${nears}</div></div>
-    <div class="metric"><div class="metric-label">Buy opportunities</div><div class="metric-val buy">${filteredBuys.length}</div></div>`;
-  filteredLots.sort((a,b)=>{ const o={SELL:0,NEAR_SELL:1,OK:2}; if(o[a.signal]!==o[b.signal]) return o[a.signal]-o[b.signal]; return a.sym.localeCompare(b.sym); });
+    <div class="metric"><div class="metric-label">Sell signals ≥${p.sellPct}%</div><div class="metric-val c-sell">${sells}</div></div>
+    <div class="metric"><div class="metric-label">Near sell ≥${p.nearPct}%</div><div class="metric-val c-warn">${nears}</div></div>
+    <div class="metric"><div class="metric-label">Buy opportunities</div><div class="metric-val c-buy">${filteredBuys.length}</div></div>`;
+  filteredLots.sort((a,b)=>{const o={SELL:0,NEAR_SELL:1,OK:2};if(o[a.signal]!==o[b.signal])return o[a.signal]-o[b.signal];return a.sym.localeCompare(b.sym);});
   filteredBuys.sort((a,b)=>a.sym.localeCompare(b.sym));
-  let html = '';
-  if (!allRows.length) {
-    html = `<div class="no-data">Loading data... if this persists, upload CSV manually above.</div>`;
-  } else {
-    if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL')
-      html += `<div class="section-head">🔵 Buy opportunities — ${filteredBuys.length} stock${filteredBuys.length>1?'s':''}</div>
-               <div class="section-wrap">${filteredBuys.map(d=>buyCardHtml(d,p)).join('')}</div>`;
-    if (filteredLots.length && sigF !== 'BUY') {
-      if (filteredBuys.length && sigF !== 'SELL' && sigF !== 'NEAR_SELL')
-        html += `<div class="section-head" style="margin-top:8px">📋 All lots</div>`;
-      html += `<div class="section-wrap">${filteredLots.map(d=>lotCardHtml(d,p)).join('')}</div>`;
+  let html='';
+  if(!allRows.length){html=`<div class="no-data">Loading data...</div>`;}
+  else{
+    if(filteredBuys.length&&sigF!=='SELL'&&sigF!=='NEAR_SELL')
+      html+=`<div class="section-head">🔵 Buy opportunities — ${filteredBuys.length} stock${filteredBuys.length>1?'s':''}</div><div class="section-wrap">${filteredBuys.map(d=>buyCardHtml(d,p)).join('')}</div>`;
+    if(filteredLots.length&&sigF!=='BUY'){
+      if(filteredBuys.length&&sigF!=='SELL'&&sigF!=='NEAR_SELL')html+=`<div class="section-head" style="margin-top:8px">📋 All lots</div>`;
+      html+=`<div class="section-wrap">${filteredLots.map(d=>lotCardHtml(d,p)).join('')}</div>`;
     }
-    if (!filteredLots.length && !filteredBuys.length)
-      html = `<div class="no-data">No lots match the current filters.</div>`;
+    if(!filteredLots.length&&!filteredBuys.length)html=`<div class="no-data">No lots match the current filters.</div>`;
   }
-  document.getElementById('tableArea').innerHTML = html;
+  document.getElementById('tableArea').innerHTML=html;
 }
 
 document.getElementById('csvFile').addEventListener('change', e => {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    allRows = parseCSV(ev.target.result);
-    document.getElementById("lastUpdated").textContent = "Loaded: " + file.name;
-    setStatus("✓ CSV loaded — fetching live prices...", "success");
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    allRows=parseCSV(ev.target.result);
+    document.getElementById("lastUpdated").textContent="Loaded: "+file.name;
+    setStatus("✓ CSV loaded — fetching live prices...","success");
     populateAcctFilter();
     await fetchLivePrices();
   };
   reader.readAsText(file);
 });
 
-['acctFilter','signalFilter'].forEach(id=>document.getElementById(id).addEventListener('change', renderAll));
-document.getElementById('symFilter').addEventListener('input', renderAll);
-['sellPct','buyPct','nearPct'].forEach(id=>document.getElementById(id).addEventListener('change', renderAll));
+['acctFilter','signalFilter'].forEach(id=>document.getElementById(id).addEventListener('change',renderAll));
+document.getElementById('symFilter').addEventListener('input',renderAll);
+['sellPct','buyPct','nearPct'].forEach(id=>document.getElementById(id).addEventListener('change',renderAll));
 
+// ══════════════════════════════════════════════════
+// WATCHLIST TAB
+// ══════════════════════════════════════════════════
+function getWatchlist() {
+  try {
+    const saved = localStorage.getItem(WL_KEY);
+    return saved ? JSON.parse(saved) : [...DEFAULT_WATCHLIST];
+  } catch(e) { return [...DEFAULT_WATCHLIST]; }
+}
+
+function saveWatchlist(list) {
+  try { localStorage.setItem(WL_KEY, JSON.stringify(list)); } catch(e) {}
+}
+
+function addWatchlistSymbol() {
+  const input = document.getElementById('wlAddInput');
+  const sym = input.value.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+  if (!sym) return;
+  const list = getWatchlist();
+  if (list.includes(sym)) { input.value=''; return; }
+  list.push(sym);
+  saveWatchlist(list);
+  input.value='';
+  wlData[sym] = { loading: true };
+  renderWatchlist();
+  fetchWatchlistPrices([sym]);
+}
+
+function removeWatchlistSymbol(sym) {
+  const list = getWatchlist().filter(s => s !== sym);
+  saveWatchlist(list);
+  delete wlData[sym];
+  renderWatchlist();
+}
+
+function setZoneFilter(f) {
+  zoneFilter = f;
+  document.getElementById('zfAll').className   = 'zone-filter-btn' + (f==='all'?'   active-all':'');
+  document.getElementById('zfBuy').className   = 'zone-filter-btn' + (f==='buy'?'   active-buy':'');
+  document.getElementById('zfWatch').className = 'zone-filter-btn' + (f==='watch'?' active-watch':'');
+  renderWatchlist();
+}
+
+async function refreshWatchlist() {
+  const list = getWatchlist();
+  document.getElementById('wlPriceUpdated').textContent = 'Fetching prices...';
+  wlData = {};
+  list.forEach(s => wlData[s] = { loading: true });
+  renderWatchlist();
+  await fetchWatchlistPrices(list);
+}
+
+async function fetchWatchlistPrices(symbols) {
+  // Fetch in batches of 20 to avoid URL length limits
+  const batchSize = 20;
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const batch = symbols.slice(i, i + batchSize);
+    const symsStr = batch.join(',');
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${symsStr}&fields=regularMarketPrice,fiftyTwoWeekLow,fiftyTwoWeekHigh,shortName`;
+    const proxies = [
+      s => `https://corsproxy.io/?${encodeURIComponent(s)}`,
+      s => `https://api.allorigins.win/get?url=${encodeURIComponent(s)}`,
+    ];
+    let fetched = false;
+    for (const makeProxy of proxies) {
+      try {
+        const res = await fetch(makeProxy(yahooUrl));
+        if (!res.ok) continue;
+        const text = await res.text();
+        let data;
+        try { const outer=JSON.parse(text); data=outer.contents?JSON.parse(outer.contents):outer; } catch(e){continue;}
+        const quotes = data?.quoteResponse?.result || [];
+        if (!quotes.length) continue;
+        quotes.forEach(q => {
+          if (q.regularMarketPrice && q.fiftyTwoWeekLow) {
+            wlData[q.symbol] = {
+              price:   q.regularMarketPrice,
+              low52:   q.fiftyTwoWeekLow,
+              high52:  q.fiftyTwoWeekHigh,
+              name:    q.shortName || q.symbol,
+              loading: false
+            };
+          }
+        });
+        fetched = true;
+        break;
+      } catch(e) { continue; }
+    }
+    if (!fetched) {
+      batch.forEach(s => { if (wlData[s]?.loading) wlData[s] = { loading: false, error: true }; });
+    }
+  }
+  const now = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('wlPriceUpdated').innerHTML =
+    `<span class="live-dot"></span>Prices as of ${now}`;
+  renderWatchlist();
+}
+
+function getZone(price, low52, buyZonePct, watchZonePct) {
+  const buyThreshold   = low52 * (buyZonePct / 100);
+  const watchThreshold = low52 * (watchZonePct / 100);
+  if (price <= buyThreshold)   return 'buy';
+  if (price <= watchThreshold) return 'watch';
+  return 'wait';
+}
+
+function wlCardHtml(sym, d, buyZonePct, watchZonePct) {
+  if (d.loading) return `<div class="wl-card loading"><div class="wl-top"><div class="wl-sym">${sym}</div></div><div style="font-size:12px;color:#aaa">Loading...</div></div>`;
+  if (d.error)   return `<div class="wl-card zone-wait"><div class="wl-top"><div><div class="wl-sym">${sym}</div></div><button class="remove-btn" onclick="removeWatchlistSymbol('${sym}')">✕ Remove</button></div><div style="font-size:12px;color:#aaa">Could not load price</div></div>`;
+
+  const zone = getZone(d.price, d.low52, buyZonePct, watchZonePct);
+  const buyThreshold   = d.low52 * (buyZonePct / 100);
+  const watchThreshold = d.low52 * (watchZonePct / 100);
+  const distPct = ((d.price - d.low52) / d.low52 * 100).toFixed(1);
+  const distToBuy = ((d.price - buyThreshold) / buyThreshold * 100).toFixed(1);
+
+  let badgeClass='badge-zone-wait', badgeLabel='⚪ Wait', cardClass='wl-card zone-wait';
+  if (zone==='buy')  { badgeClass='badge-zone-buy';  badgeLabel='🟢 Buy zone';  cardClass='wl-card zone-buy'; }
+  if (zone==='watch'){ badgeClass='badge-zone-watch'; badgeLabel='🟡 Watch';     cardClass='wl-card zone-watch'; }
+
+  return `<div class="${cardClass}">
+    <div class="wl-top">
+      <div>
+        <div class="wl-sym">${sym}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${d.name||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="badge ${badgeClass}">${badgeLabel}</span>
+        <button class="remove-btn" onclick="removeWatchlistSymbol('${sym}')">✕</button>
+      </div>
+    </div>
+    <div class="wl-grid">
+      <div class="lot-field"><span class="lot-field-label">Current price</span><span class="lot-field-val">$${d.price.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">52W low</span><span class="lot-field-val">$${d.low52.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">52W high</span><span class="lot-field-val">$${d.high52.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Above 52W low</span><span class="lot-field-val ${distPct<=10?'pos':'neg'}">+${distPct}%</span></div>
+      <div class="lot-field"><span class="lot-field-label">🟢 Buy trigger ≤</span><span class="lot-field-val">$${buyThreshold.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">🟡 Watch trigger ≤</span><span class="lot-field-val">$${watchThreshold.toFixed(2)}</span></div>
+    </div>
+    ${zone!=='buy'?`<div class="lot-note">${distToBuy>0?`$${(d.price-buyThreshold).toFixed(2)} (${distToBuy}%) above buy zone`:`In buy zone!`}</div>`:'<div class="lot-note">✅ Price is in the buy zone — consider buying</div>'}
+  </div>`;
+}
+
+function renderWatchlist() {
+  const list = getWatchlist();
+  const buyZonePct   = parseFloat(document.getElementById('buyZonePct').value)   || 105;
+  const watchZonePct = parseFloat(document.getElementById('watchZonePct').value) || 110;
+
+  // Count zones
+  let buyCount=0, watchCount=0, waitCount=0;
+  list.forEach(sym => {
+    const d = wlData[sym];
+    if (!d || d.loading || d.error) return;
+    const z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
+    if (z==='buy') buyCount++;
+    else if (z==='watch') watchCount++;
+    else waitCount++;
+  });
+
+  document.getElementById('wlSummaryGrid').innerHTML = `
+    <div class="metric"><div class="metric-label">Watchlist total</div><div class="metric-val">${list.length}</div></div>
+    <div class="metric"><div class="metric-label">🟢 Buy zone</div><div class="metric-val c-sell">${buyCount}</div></div>
+    <div class="metric"><div class="metric-label">🟡 Watch zone</div><div class="metric-val c-warn">${watchCount}</div></div>
+    <div class="metric"><div class="metric-label">⚪ Wait</div><div class="metric-val c-wait">${waitCount}</div></div>`;
+
+  // Sort: buy first, then watch, then wait, then loading
+  const zoneOrder = { buy:0, watch:1, wait:2 };
+  const sorted = [...list].sort((a,b) => {
+    const da=wlData[a], db=wlData[b];
+    if (!da||da.loading) return 1; if (!db||db.loading) return -1;
+    if (da.error) return 1; if (db.error) return -1;
+    const za=getZone(da.price,da.low52,buyZonePct,watchZonePct);
+    const zb=getZone(db.price,db.low52,buyZonePct,watchZonePct);
+    if (zoneOrder[za]!==zoneOrder[zb]) return zoneOrder[za]-zoneOrder[zb];
+    // Within same zone, sort by % above 52W low ascending
+    const pa=(da.price-da.low52)/da.low52;
+    const pb=(db.price-db.low52)/db.low52;
+    return pa-pb;
+  });
+
+  // Apply zone filter
+  const filtered = sorted.filter(sym => {
+    const d = wlData[sym];
+    if (!d || d.loading || d.error || zoneFilter==='all') return true;
+    const z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
+    return z === zoneFilter;
+  });
+
+  const html = filtered.map(sym => wlCardHtml(sym, wlData[sym]||{loading:true}, buyZonePct, watchZonePct)).join('');
+  document.getElementById('wlArea').innerHTML = html || `<div class="no-data">No stocks in this zone.</div>`;
+}
+
+['buyZonePct','watchZonePct'].forEach(id =>
+  document.getElementById(id).addEventListener('change', renderWatchlist)
+);
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
 loadFromRepo();
 </script>
 </body>
