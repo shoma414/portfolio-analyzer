@@ -29,11 +29,12 @@ def get_access_token():
     if r.status_code != 200:
         print(f"Token error: {r.status_code} {r.text}")
         r.raise_for_status()
-    data = r.json()
     print("✓ Access token obtained")
-    return data["access_token"]
+    return r.json()["access_token"]
 
 # ── Step 2: Find latest IBKR email with CSV attachment ───────────────────────
+# Note: personal Outlook (Graph API) does not support $filter + $orderby together
+# so we fetch recent emails from IBKR and pick the latest one in Python
 def find_latest_email(token):
     since = (datetime.utcnow() - timedelta(days=3)).strftime("%Y-%m-%dT00:00:00Z")
     url = (
@@ -41,8 +42,7 @@ def find_latest_email(token):
         f"?$filter=from/emailAddress/address eq '{SENDER}'"
         f" and receivedDateTime ge {since}"
         f" and hasAttachments eq true"
-        f"&$orderby=receivedDateTime desc"
-        f"&$top=1"
+        f"&$top=10"
         f"&$select=id,subject,receivedDateTime"
     )
     headers = {"Authorization": f"Bearer {token}"}
@@ -53,6 +53,9 @@ def find_latest_email(token):
     msgs = r.json().get("value", [])
     if not msgs:
         raise Exception(f"No IBKR email found in the last 3 days from {SENDER}")
+
+    # Sort by date in Python and pick the most recent
+    msgs.sort(key=lambda m: m["receivedDateTime"], reverse=True)
     msg = msgs[0]
     print(f"✓ Found email: '{msg['subject']}' received {msg['receivedDateTime']}")
     return msg["id"]
