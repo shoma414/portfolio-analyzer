@@ -64,6 +64,8 @@ input[type=file]{display:none;}
 .refresh-btn{padding:8px 14px;border-radius:8px;border:1px solid #e0e0e0;background:#fff;font-size:13px;cursor:pointer;color:#1a5fa8;font-weight:600;}
 .refresh-btn:active{background:#e3eeff;}
 .countdown{font-size:11px;color:#aaa;margin-left:6px;}
+.tag-live{font-size:9px;font-weight:700;background:#e6f4e6;color:#2d7a2d;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+.tag-csv{font-size:9px;font-weight:700;background:#f2f2f2;color:#888;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
 </style>
 </head>
 <body>
@@ -239,6 +241,7 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     const sym = r.Symbol, acct = r.ClientAccountID;
     const cost = parseFloat(r.CostBasisPrice);
     // Use live price if available, else fall back to CSV mark price
+    const isLive = !!livePrices[sym];
     const mark = livePrices[sym] || parseFloat(r.MarkPrice);
     const qty = parseFloat(r.Quantity), pnl = parseFloat(r.FifoPnlUnrealized);
     if (isNaN(cost)||isNaN(mark)||cost<=0) return null;
@@ -252,7 +255,7 @@ function processLots(rows, sellPct, buyPct, nearPct) {
     let signal = 'OK';
     if (pct >= sellPct) signal = 'SELL';
     else if (pct >= nearPct) signal = 'NEAR_SELL';
-    return {sym, acct, cost, mark, qty, pnl: livePnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal};
+    return {sym, acct, cost, mark, qty, pnl: livePnl, pct, date:r.OpenDateTime, signal, lowestCost, buyTrigger, buySignal, isLive};
   }).filter(Boolean);
 
   const buyGroups = {};
@@ -334,7 +337,7 @@ function buyCardHtml(d, p) {
       <span class="badge badge-buy">Buy ↓</span>
     </div>
     <div class="buy-summary">
-      <div class="lot-field"><span class="lot-field-label">Live price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${d.lots[0].isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>'}</span></div>
       <div class="lot-field"><span class="lot-field-label">Lowest lot</span><span class="lot-field-val">$${d.lowestCost.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Drop from lowest</span><span class="lot-field-val neg">${dropPct}%</span></div>
       <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
@@ -367,7 +370,7 @@ function lotCardHtml(d, p) {
     <div class="lot-grid">
       <div class="lot-field"><span class="lot-field-label">Qty</span><span class="lot-field-val">${d.qty}</span></div>
       <div class="lot-field"><span class="lot-field-label">Cost basis</span><span class="lot-field-val">$${d.cost.toFixed(2)}</span></div>
-      <div class="lot-field"><span class="lot-field-label">Live price</span><span class="lot-field-val">$${d.mark.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${d.isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>'}</span></div>
       <div class="lot-field"><span class="lot-field-label">Change</span><span class="lot-field-val ${d.pct>=0?'pos':'neg'}">${pctStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Unreal. P&L</span><span class="lot-field-val ${d.pnl>=0?'pos':'neg'}">${pnlStr}</span></div>
       <div class="lot-field"><span class="lot-field-label">Opened</span><span class="lot-field-val">${fmtDate(d.date)}</span></div>
