@@ -23,10 +23,11 @@ jobs:
         run: pip install requests
 
       - name: Fetch latest IBKR CSV from Outlook
-        env:
-          OUTLOOK_CLIENT_ID:     ${{ secrets.OUTLOOK_CLIENT_ID }}
-          OUTLOOK_CLIENT_SECRET: ${{ secrets.OUTLOOK_CLIENT_SECRET }}
-          OUTLOOK_EMAIL:         ${{ secrets.OUTLOOK_EMAIL }}
+        env:env:
+          OUTLOOK_CLIENT_ID:      ${{ secrets.OUTLOOK_CLIENT_ID }}
+          OUTLOOK_CLIENT_SECRET:  ${{ secrets.OUTLOOK_CLIENT_SECRET }}
+          OUTLOOK_EMAIL:          ${{ secrets.OUTLOOK_EMAIL }}
+          OUTLOOK_REFRESH_TOKEN:  ${{ secrets.OUTLOOK_REFRESH_TOKEN }}
         run: python fetch_csv.py
 
       - name: Commit and push updated CSV
