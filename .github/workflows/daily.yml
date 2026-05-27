@@ -2,7 +2,7 @@ name: Daily Portfolio Update
 
 on:
   schedule:
-    - cron: "0 4 * * 1-5"
+    - cron: "0 10 * * 1-5"
   workflow_dispatch:
 
 jobs:
