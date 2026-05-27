@@ -159,32 +159,41 @@ async function fetchLivePrices() {
   const symbols = [...new Set(allRows.map(r => r.Symbol).filter(Boolean))];
   if (!symbols.length) return;
 
-  // Yahoo Finance allows batching symbols with comma
-  const url = YAHOO_PROXY + symbols.join(',') + "&fields=regularMarketPrice&crumb=";
-  try {
-    // Use allorigins proxy to avoid CORS
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
-      `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${symbols.join(',')}`
-    )}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error("Price fetch failed");
-    const outer = await res.json();
-    const data = JSON.parse(outer.contents);
-    const quotes = data?.quoteResponse?.result || [];
-    quotes.forEach(q => {
-      if (q.regularMarketPrice) livePrices[q.symbol] = q.regularMarketPrice;
-    });
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-    document.getElementById("priceUpdated").innerHTML =
-      `<span class="live-dot"></span>Live prices as of ${timeStr} — refreshing every 5 min`;
-    setStatus("✓ Live prices loaded", "success");
-    setTimeout(() => document.getElementById("statusBar").style.display = "none", 2000);
-  } catch(e) {
-    // Fall back to CSV prices silently
-    document.getElementById("priceUpdated").textContent = "Using CSV prices (live price fetch unavailable)";
-    setStatus("", "");
-    document.getElementById("statusBar").style.display = "none";
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${symbols.join(',')}`;
+  const proxies = [
+    s => `https://corsproxy.io/?${encodeURIComponent(s)}`,
+    s => `https://api.allorigins.win/get?url=${encodeURIComponent(s)}`,
+  ];
+
+  let fetched = false;
+  for (const makeProxy of proxies) {
+    try {
+      const res = await fetch(makeProxy(yahooUrl));
+      if (!res.ok) continue;
+      const text = await res.text();
+      let data;
+      try {
+        const outer = JSON.parse(text);
+        data = outer.contents ? JSON.parse(outer.contents) : outer;
+      } catch(e) { continue; }
+      const quotes = data?.quoteResponse?.result || [];
+      if (!quotes.length) continue;
+      quotes.forEach(q => {
+        if (q.regularMarketPrice) livePrices[q.symbol] = q.regularMarketPrice;
+      });
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+      document.getElementById("priceUpdated").innerHTML =
+        `<span class="live-dot"></span>Live prices as of ${timeStr} — refreshing every 5 min`;
+      setStatus("✓ Live prices loaded", "success");
+      setTimeout(() => document.getElementById("statusBar").style.display = "none", 2000);
+      fetched = true;
+      break;
+    } catch(e) { continue; }
+  }
+
+  if (!fetched) {
+    document.getElementById("priceUpdated").textContent = "⚠ Could not fetch live prices — showing CSV prices";
   }
   renderAll();
   scheduleNextPriceRefresh();
