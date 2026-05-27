@@ -220,7 +220,8 @@ const GITHUB_USER = "shoma414";
 const GITHUB_REPO = "portfolio-analyzer";
 const CSV_URL    = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/portfolio.csv`;
 const META_URL   = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/meta.json`;
-const PRICES_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/prices.json`;
+const PRICES_URL    = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/prices.json`;
+const WATCHLIST_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/watchlist.json`;
 const PRICE_REFRESH_MS = 10 * 60 * 1000;
 
 let allRows = [], processedData = { lots: [], buyGroups: [] };
@@ -562,48 +563,33 @@ async function refreshWatchlist() {
 }
 
 async function fetchWatchlistPrices(symbols) {
-  // Fetch in batches of 20 to avoid URL length limits
-  const batchSize = 20;
-  for (let i = 0; i < symbols.length; i += batchSize) {
-    const batch = symbols.slice(i, i + batchSize);
-    const symsStr = batch.join(',');
-    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${symsStr}&fields=regularMarketPrice,fiftyTwoWeekLow,fiftyTwoWeekHigh,shortName`;
-    const proxies = [
-      s => `https://corsproxy.io/?${encodeURIComponent(s)}`,
-      s => `https://api.allorigins.win/get?url=${encodeURIComponent(s)}`,
-    ];
-    let fetched = false;
-    for (const makeProxy of proxies) {
-      try {
-        const res = await fetch(makeProxy(yahooUrl));
-        if (!res.ok) continue;
-        const text = await res.text();
-        let data;
-        try { const outer=JSON.parse(text); data=outer.contents?JSON.parse(outer.contents):outer; } catch(e){continue;}
-        const quotes = data?.quoteResponse?.result || [];
-        if (!quotes.length) continue;
-        quotes.forEach(q => {
-          if (q.regularMarketPrice && q.fiftyTwoWeekLow) {
-            wlData[q.symbol] = {
-              price:   q.regularMarketPrice,
-              low52:   q.fiftyTwoWeekLow,
-              high52:  q.fiftyTwoWeekHigh,
-              name:    q.shortName || q.symbol,
-              loading: false
-            };
-          }
-        });
-        fetched = true;
-        break;
-      } catch(e) { continue; }
-    }
-    if (!fetched) {
-      batch.forEach(s => { if (wlData[s]?.loading) wlData[s] = { loading: false, error: true }; });
-    }
+  try {
+    const res = await fetch(WATCHLIST_URL + "?t=" + Date.now());
+    if (!res.ok) throw new Error("watchlist.json not found");
+    const data = await res.json();
+    if (!data.data || !Object.keys(data.data).length) throw new Error("Empty watchlist data");
+
+    // Merge fetched data into wlData
+    const list = getWatchlist();
+    list.forEach(sym => {
+      const key = sym === 'BTC' ? 'BTC-USD' : sym;
+      const d = data.data[key] || data.data[sym];
+      if (d && d.price && d.low52) {
+        wlData[sym] = { price: d.price, low52: d.low52, high52: d.high52 || 0, loading: false };
+      } else {
+        wlData[sym] = { loading: false, error: true };
+      }
+    });
+
+    document.getElementById('wlPriceUpdated').innerHTML =
+      `<span class="live-dot"></span>Prices as of ${data.last_updated}`;
+  } catch(e) {
+    console.error('Watchlist fetch error:', e);
+    const list = getWatchlist();
+    list.forEach(sym => { if (wlData[sym]?.loading) wlData[sym] = { loading: false, error: true }; });
+    document.getElementById('wlPriceUpdated').textContent =
+      "⚠ Could not load prices — run workflow manually to generate watchlist.json";
   }
-  const now = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
-  document.getElementById('wlPriceUpdated').innerHTML =
-    `<span class="live-dot"></span>Prices as of ${now}`;
   renderWatchlist();
 }
 
