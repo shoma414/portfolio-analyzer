@@ -23,7 +23,7 @@ jobs:
         run: pip install requests
 
       - name: Fetch latest IBKR CSV from Outlook
-        env:env:
+        env:
           OUTLOOK_CLIENT_ID:      ${{ secrets.OUTLOOK_CLIENT_ID }}
           OUTLOOK_CLIENT_SECRET:  ${{ secrets.OUTLOOK_CLIENT_SECRET }}
           OUTLOOK_EMAIL:          ${{ secrets.OUTLOOK_EMAIL }}
