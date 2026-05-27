@@ -12,10 +12,26 @@ EMAIL         = os.environ["OUTLOOK_EMAIL"]
 SENDER        = "donotreply@interactivebrokers.com"
 CSV_PATH      = "data/portfolio.csv"
 PRICES_PATH   = "data/prices.json"
+WATCHLIST_PATH= "data/watchlist.json"
 
 REDIRECT_URI  = "http://localhost"
 SCOPE         = "Mail.Read offline_access"
 TOKEN_URL     = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+
+WATCHLIST = [
+  "NEM","WDC","STX","NXPI","SLV","AMKR","RL","PEP","ENFR","ACN","ODFL","CHRW",
+  "BIRK","SAP","SEZL","EFX","PANW","ADI","B","HIMS","SNY","BMNR","YOU","ISRG",
+  "VRSN","SMGB","JKHY","GEV","ECL","SYK","FICO","DKS","GRMN","LLY","SPGI","FTNT",
+  "DECK","PODD","WSM","PH","PAYX","ROK","CROX","GILD","TMO","ZTS","AOS","LTRX",
+  "NIO","CPRT","APP","DHI","WST","CL","NUTX","LIN","NOW","NVO","CELH","CLX","KVUE",
+  "ABBV","ADM","SHOP","TTD","GSK","SWKS","LOW","ABT","FIX","VLO","ANET","ON","CNQ",
+  "UNP","ONON","CTRE","POOL","WULF","DVN","FAST","UBER","APD","KMB","MSCI","CUBE",
+  "MAA","ADP","EOG","WM","CMI","KO","RIO","SMCI","IBM","WSO","KLAC","AMAT","GOOGL",
+  "ADSK","CRM","PG","ELF","QCOM","CAT","MRK","LULU","AVGO","MDLZ","ULTA","ASML",
+  "LRCX","V","CVX","COP","MA","GPC","HSY","ORCL","MSTR","MDT","LEN","TXN","TSLA",
+  "AAPL","NVDA","XOM","ARM","ADBE","AMD","SBUX","META","PATH","SLB","BTC-USD","HD",
+  "NKE","TSM","CRWD","MMM","AEO","MU","JNJ","UPS","ATKR","MSFT","CSCO"
+]
 
 # ── Step 1: Get access token ─────────────────────────────────────────────────
 def get_access_token():
@@ -41,20 +57,17 @@ def find_latest_email(token):
         f"?$filter=from/emailAddress/address eq '{SENDER}'"
         f" and receivedDateTime ge {since}"
         f" and hasAttachments eq true"
-        f"&$top=10"
-        f"&$select=id,subject,receivedDateTime"
+        f"&$top=10&$select=id,subject,receivedDateTime"
     )
     headers = {"Authorization": f"Bearer {token}"}
     r = requests.get(url, headers=headers)
-    if r.status_code != 200:
-        print(f"Email search error: {r.status_code} {r.text}")
-        r.raise_for_status()
+    r.raise_for_status()
     msgs = r.json().get("value", [])
     if not msgs:
-        raise Exception(f"No IBKR email found in the last 3 days from {SENDER}")
+        raise Exception(f"No IBKR email found in the last 3 days")
     msgs.sort(key=lambda m: m["receivedDateTime"], reverse=True)
     msg = msgs[0]
-    print(f"✓ Found email: '{msg['subject']}' received {msg['receivedDateTime']}")
+    print(f"✓ Found email: '{msg['subject']}'")
     return msg["id"]
 
 # ── Step 3: Get CSV attachment ────────────────────────────────────────────────
@@ -62,81 +75,93 @@ def get_csv_attachment(token, message_id):
     url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/attachments"
     headers = {"Authorization": f"Bearer {token}"}
     r = requests.get(url, headers=headers)
-    if r.status_code != 200:
-        print(f"Attachment error: {r.status_code} {r.text}")
-        r.raise_for_status()
-    attachments = r.json().get("value", [])
-    for att in attachments:
+    r.raise_for_status()
+    for att in r.json().get("value", []):
         if att.get("name", "").lower().endswith(".csv"):
             print(f"✓ Found CSV: {att['name']}")
             return base64.b64decode(att["contentBytes"]).decode("utf-8")
-    names = [a.get("name") for a in attachments]
-    raise Exception(f"No CSV attachment found. Files: {names}")
+    raise Exception("No CSV attachment found")
 
 # ── Step 4: Extract symbols from CSV ─────────────────────────────────────────
 def extract_symbols(csv_content):
+    excluded = {"UAVS", "IDEXQ.OLD", "AXLA", "APTX.OLD"}
     symbols = set()
-    excluded = {"UAVS", "IDEXQ", "AXLA", "APTX"}
     for line in csv_content.split('\n'):
         t = line.strip()
-        if not t or t.startswith('"Symbol"') or t.startswith('Symbol'): continue
+        if not t or 'Symbol' in t: continue
         sym = t.split(',')[0].strip().strip('"')
         if sym and sym not in excluded:
             symbols.add(sym)
-    print(f"✓ Found {len(symbols)} symbols: {sorted(symbols)}")
+    print(f"✓ Portfolio symbols: {len(symbols)}")
     return sorted(symbols)
 
-# ── Step 5: Fetch live prices via yfinance ────────────────────────────────────
-def fetch_prices(symbols):
-    try:
-        import yfinance as yf
-        prices = {}
-        # Batch fetch all symbols at once
-        tickers = yf.Tickers(' '.join(symbols))
-        for sym in symbols:
-            try:
-                price = tickers.tickers[sym].fast_info.get('lastPrice') or \
-                        tickers.tickers[sym].fast_info.get('regularMarketPrice')
-                if price:
-                    prices[sym] = round(float(price), 4)
-                    print(f"  {sym}: ${price:.2f}")
-            except Exception as e:
-                print(f"  {sym}: failed ({e})")
-        print(f"✓ Fetched {len(prices)}/{len(symbols)} prices")
-        return prices
-    except Exception as e:
-        print(f"⚠ yfinance error: {e}")
-        return {}
+# ── Step 5: Fetch prices using yfinance ──────────────────────────────────────
+def fetch_yfinance_data(symbols, fields=('regularMarketPrice',)):
+    import yfinance as yf
+    result = {}
+    batch_size = 50
+    for i in range(0, len(symbols), batch_size):
+        batch = symbols[i:i+batch_size]
+        try:
+            tickers = yf.Tickers(' '.join(batch))
+            for sym in batch:
+                try:
+                    info = tickers.tickers[sym].fast_info
+                    entry = {}
+                    if 'regularMarketPrice' in fields:
+                        entry['price'] = round(float(info.get('lastPrice') or info.get('regularMarketPrice') or 0), 4)
+                    if 'fiftyTwoWeekLow' in fields:
+                        entry['low52']  = round(float(info.get('fifty_two_week_low') or 0), 4)
+                        entry['high52'] = round(float(info.get('fifty_two_week_high') or 0), 4)
+                    if entry.get('price', 0) > 0:
+                        result[sym] = entry
+                        print(f"  {sym}: ${entry.get('price',0):.2f}")
+                except Exception as e:
+                    print(f"  {sym}: skip ({e})")
+        except Exception as e:
+            print(f"Batch error: {e}")
+    return result
 
-# ── Step 6: Save files ────────────────────────────────────────────────────────
-def save_files(csv_content, prices):
+# ── Step 6: Save all files ────────────────────────────────────────────────────
+def save_files(csv_content, portfolio_data, watchlist_data):
     os.makedirs("data", exist_ok=True)
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
+    # CSV
     with open(CSV_PATH, "w", encoding="utf-8") as f:
         f.write(csv_content)
-    print(f"✓ CSV saved ({len(csv_content)} bytes)")
+    print(f"✓ CSV saved")
 
-    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    payload = {
-        "prices": prices,
-        "last_updated": now_str,
-        "count": len(prices)
-    }
+    # Portfolio prices (price only)
     with open(PRICES_PATH, "w") as f:
-        json.dump(payload, f)
-    print(f"✓ Prices saved: {now_str}")
+        json.dump({"prices": {s: d['price'] for s,d in portfolio_data.items()}, "last_updated": now_str}, f)
+    print(f"✓ prices.json saved ({len(portfolio_data)} symbols)")
 
-    meta = {"last_updated": now_str}
+    # Watchlist (price + 52W low/high)
+    with open(WATCHLIST_PATH, "w") as f:
+        json.dump({"data": watchlist_data, "last_updated": now_str}, f)
+    print(f"✓ watchlist.json saved ({len(watchlist_data)} symbols)")
+
+    # Meta
     with open("data/meta.json", "w") as f:
-        json.dump(meta, f)
+        json.dump({"last_updated": now_str}, f)
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=== Portfolio Fetcher ===")
+
+    # Email
     token       = get_access_token()
     message_id  = find_latest_email(token)
     csv_content = get_csv_attachment(token, message_id)
-    symbols     = extract_symbols(csv_content)
-    prices      = fetch_prices(symbols)
-    save_files(csv_content, prices)
-    print("=== Done ✓ ===")
+    port_syms   = extract_symbols(csv_content)
+
+    # Prices
+    print("\n-- Portfolio prices --")
+    portfolio_data = fetch_yfinance_data(port_syms, fields=('regularMarketPrice',))
+
+    print("\n-- Watchlist prices + 52W data --")
+    watchlist_data = fetch_yfinance_data(WATCHLIST, fields=('regularMarketPrice','fiftyTwoWeekLow'))
+
+    save_files(csv_content, portfolio_data, watchlist_data)
+    print("\n=== Done ✓ ===")
