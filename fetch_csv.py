@@ -7,29 +7,37 @@ from datetime import datetime, timedelta
 # ── Config from GitHub Secrets ──────────────────────────────────────────────
 CLIENT_ID     = os.environ["OUTLOOK_CLIENT_ID"]
 CLIENT_SECRET = os.environ["OUTLOOK_CLIENT_SECRET"]
+REFRESH_TOKEN = os.environ["OUTLOOK_REFRESH_TOKEN"]
 EMAIL         = os.environ["OUTLOOK_EMAIL"]
 SENDER        = "donotreply@interactivebrokers.com"
 OUTPUT_PATH   = "data/portfolio.csv"
 
-# ── Step 1: Get access token ─────────────────────────────────────────────────
-def get_token():
-    url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
-    data = {
-        "grant_type":    "client_credentials",
+REDIRECT_URI  = "http://localhost"
+SCOPE         = "Mail.Read offline_access"
+TOKEN_URL     = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+
+# ── Step 1: Get fresh access token using refresh token ───────────────────────
+def get_access_token():
+    r = requests.post(TOKEN_URL, data={
+        "grant_type":    "refresh_token",
         "client_id":     CLIENT_ID,
         "client_secret": CLIENT_SECRET,
-        "scope":         "https://graph.microsoft.com/.default",
-    }
-    r = requests.post(url, data=data)
-    r.raise_for_status()
-    return r.json()["access_token"]
+        "refresh_token": REFRESH_TOKEN,
+        "scope":         SCOPE,
+        "redirect_uri":  REDIRECT_URI,
+    })
+    if r.status_code != 200:
+        print(f"Token error: {r.status_code} {r.text}")
+        r.raise_for_status()
+    data = r.json()
+    print("✓ Access token obtained")
+    return data["access_token"]
 
 # ── Step 2: Find latest IBKR email with CSV attachment ───────────────────────
 def find_latest_email(token):
-    # Search last 2 days to be safe
-    since = (datetime.utcnow() - timedelta(days=2)).strftime("%Y-%m-%dT00:00:00Z")
+    since = (datetime.utcnow() - timedelta(days=3)).strftime("%Y-%m-%dT00:00:00Z")
     url = (
-        f"https://graph.microsoft.com/v1.0/users/{EMAIL}/messages"
+        "https://graph.microsoft.com/v1.0/me/messages"
         f"?$filter=from/emailAddress/address eq '{SENDER}'"
         f" and receivedDateTime ge {since}"
         f" and hasAttachments eq true"
@@ -39,20 +47,24 @@ def find_latest_email(token):
     )
     headers = {"Authorization": f"Bearer {token}"}
     r = requests.get(url, headers=headers)
-    r.raise_for_status()
+    if r.status_code != 200:
+        print(f"Email search error: {r.status_code} {r.text}")
+        r.raise_for_status()
     msgs = r.json().get("value", [])
     if not msgs:
-        raise Exception(f"No IBKR email found in the last 2 days from {SENDER}")
+        raise Exception(f"No IBKR email found in the last 3 days from {SENDER}")
     msg = msgs[0]
-    print(f"Found email: '{msg['subject']}' received {msg['receivedDateTime']}")
+    print(f"✓ Found email: '{msg['subject']}' received {msg['receivedDateTime']}")
     return msg["id"]
 
 # ── Step 3: Find CSV attachment (name may vary) ───────────────────────────────
 def get_csv_attachment(token, message_id):
-    url = f"https://graph.microsoft.com/v1.0/users/{EMAIL}/messages/{message_id}/attachments"
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/attachments"
     headers = {"Authorization": f"Bearer {token}"}
     r = requests.get(url, headers=headers)
-    r.raise_for_status()
+    if r.status_code != 200:
+        print(f"Attachment error: {r.status_code} {r.text}")
+        r.raise_for_status()
     attachments = r.json().get("value", [])
 
     csv_attachment = None
@@ -60,14 +72,13 @@ def get_csv_attachment(token, message_id):
         name = att.get("name", "").lower()
         if name.endswith(".csv"):
             csv_attachment = att
-            print(f"Found CSV attachment: {att['name']}")
+            print(f"✓ Found CSV attachment: {att['name']}")
             break
 
     if not csv_attachment:
         names = [a.get("name") for a in attachments]
-        raise Exception(f"No CSV attachment found. Attachments present: {names}")
+        raise Exception(f"No CSV attachment found. Files in email: {names}")
 
-    # Decode base64 content
     content = base64.b64decode(csv_attachment["contentBytes"]).decode("utf-8")
     return content
 
@@ -76,26 +87,25 @@ def save_csv(content):
     os.makedirs("data", exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(content)
-    print(f"Saved to {OUTPUT_PATH} ({len(content)} bytes)")
+    print(f"✓ Saved to {OUTPUT_PATH} ({len(content)} bytes)")
 
-# ── Step 5: Write metadata (date of last update) ─────────────────────────────
+# ── Step 5: Save metadata ─────────────────────────────────────────────────────
 def save_metadata():
     meta = {"last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")}
     os.makedirs("data", exist_ok=True)
     with open("data/meta.json", "w") as f:
         json.dump(meta, f)
-    print(f"Metadata saved: {meta}")
+    print(f"✓ Metadata saved: {meta}")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=== Portfolio CSV Fetcher ===")
-    print(f"Target email: {EMAIL}")
     print(f"Looking for emails from: {SENDER}")
 
-    token      = get_token()
-    message_id = find_latest_email(token)
+    token       = get_access_token()
+    message_id  = find_latest_email(token)
     csv_content = get_csv_attachment(token, message_id)
     save_csv(csv_content)
     save_metadata()
 
-    print("=== Done ===")
+    print("=== Done ✓ ===")
