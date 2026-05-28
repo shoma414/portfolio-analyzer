@@ -284,7 +284,7 @@ const CSV_URL    = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_RE
 const META_URL   = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/meta.json`;
 const PRICES_URL    = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/prices.json`;
 const WATCHLIST_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/watchlist.json`;
-const PRICE_REFRESH_MS = 10 * 60 * 1000;
+const PRICE_REFRESH_MS = 30 * 60 * 1000; // 30 minutes
 
 // ── UAE time helper ─────────────────────────────────────────────────────────
 function toUAETime(utcStr) {
@@ -380,7 +380,7 @@ async function fetchLivePrices() {
     if (data.prices && Object.keys(data.prices).length > 0) {
       livePrices = data.prices;
       document.getElementById("priceUpdated").innerHTML =
-        `<span class="live-dot"></span>Live prices as of ${toUAETime(data.last_updated)} — refreshes every 10 min`;
+        `<span class="live-dot"></span>Prices last updated: ${toUAETime(data.last_updated)}`;
       setStatus("✓ Live prices loaded", "success");
       setTimeout(() => document.getElementById("statusBar").style.display = "none", 2000);
     } else throw new Error("No prices");
@@ -689,7 +689,7 @@ async function fetchWatchlistPrices(symbols) {
     });
 
     document.getElementById('wlPriceUpdated').innerHTML =
-      `<span class="live-dot"></span>Prices as of ${toUAETime(data.last_updated)}`;
+      `<span class="live-dot"></span>Watchlist prices last updated: ${toUAETime(data.last_updated)}`;
   } catch(e) {
     console.error('Watchlist fetch error:', e);
     const list = getWatchlist();
