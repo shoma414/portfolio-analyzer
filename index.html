@@ -970,37 +970,20 @@ Halal screen uses Zoya/AAOIFI: debt/assets < 33%, interest income < 5% revenue, 
     const response = await fetch("https://portfolio-analyzer-api.msrz740.workers.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages: [{ role: "user", content: prompt }]
-      })
+      body: JSON.stringify({ prompt })
     });
 
     const data = await response.json();
 
-    // Debug: log response structure
-    console.log('API response:', JSON.stringify(data).slice(0, 300));
-
-    // Handle errors from API
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-    if (!data.content) throw new Error("No content in response: " + JSON.stringify(data).slice(0, 200));
-
-    const fullText = data.content
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('');
-
-    if (!fullText) throw new Error("Empty response from AI — try again");
+    if (data.error) throw new Error(data.error);
+    if (!data.text) throw new Error("Empty response — try again");
 
     let p;
     try {
-      const clean = fullText.replace(/```json|```/g, '').trim();
-      // Find JSON object in response
+      const clean = data.text.replace(/```json|```/g, '').trim();
       const jsonStart = clean.indexOf('{');
       const jsonEnd = clean.lastIndexOf('}');
-      if (jsonStart === -1) throw new Error("No JSON found in response");
+      if (jsonStart === -1) throw new Error("No JSON in response — try again");
       p = JSON.parse(clean.slice(jsonStart, jsonEnd + 1));
     } catch(e) {
       throw new Error("Could not parse response — try again");
