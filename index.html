@@ -975,7 +975,7 @@ Halal screen uses Zoya/AAOIFI: debt/assets < 33%, interest income < 5% revenue, 
 
     const data = await response.json();
 
-    if (data.error) throw new Error(data.error);
+    if (data.error) throw new Error(data.error + (data.debug ? ' | ' + data.debug : ''));
     if (!data.text) throw new Error("Empty response — try again");
 
     let p;
