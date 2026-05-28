@@ -147,11 +147,13 @@ def fetch_yfinance_data(symbols, fields=('regularMarketPrice',)):
 def save_files(csv_content, portfolio_data, watchlist_data):
     os.makedirs("data", exist_ok=True)
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    fetch_email = os.environ.get("FETCH_EMAIL", "true").lower() == "true"
 
-    # CSV
-    with open(CSV_PATH, "w", encoding="utf-8") as f:
-        f.write(csv_content)
-    print(f"✓ CSV saved")
+    # CSV — only update timestamp if email was fetched
+    if csv_content and fetch_email:
+        with open(CSV_PATH, "w", encoding="utf-8") as f:
+            f.write(csv_content)
+        print(f"✓ CSV saved")
 
     # Portfolio prices (price only)
     with open(PRICES_PATH, "w") as f:
@@ -163,9 +165,21 @@ def save_files(csv_content, portfolio_data, watchlist_data):
         json.dump({"data": watchlist_data, "last_updated": now_str}, f)
     print(f"✓ watchlist.json saved ({len(watchlist_data)} symbols)")
 
-    # Meta
+    # Meta — separate CSV and price timestamps
+    meta = {"prices_updated": now_str}
+    # Preserve existing csv_updated if this is price-only run
+    if fetch_email:
+        meta["csv_updated"] = now_str
+    else:
+        try:
+            with open("data/meta.json", "r") as f:
+                existing = json.load(f)
+                meta["csv_updated"] = existing.get("csv_updated", now_str)
+        except:
+            meta["csv_updated"] = now_str
+    meta["last_updated"] = now_str  # keep for backwards compat
     with open("data/meta.json", "w") as f:
-        json.dump({"last_updated": now_str}, f)
+        json.dump(meta, f)
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
