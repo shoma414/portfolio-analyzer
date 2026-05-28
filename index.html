@@ -979,15 +979,29 @@ Halal screen uses Zoya/AAOIFI: debt/assets < 33%, interest income < 5% revenue, 
     });
 
     const data = await response.json();
+
+    // Debug: log response structure
+    console.log('API response:', JSON.stringify(data).slice(0, 300));
+
+    // Handle errors from API
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    if (!data.content) throw new Error("No content in response: " + JSON.stringify(data).slice(0, 200));
+
     const fullText = data.content
       .filter(b => b.type === 'text')
       .map(b => b.text)
       .join('');
 
+    if (!fullText) throw new Error("Empty response from AI — try again");
+
     let p;
     try {
       const clean = fullText.replace(/```json|```/g, '').trim();
-      p = JSON.parse(clean);
+      // Find JSON object in response
+      const jsonStart = clean.indexOf('{');
+      const jsonEnd = clean.lastIndexOf('}');
+      if (jsonStart === -1) throw new Error("No JSON found in response");
+      p = JSON.parse(clean.slice(jsonStart, jsonEnd + 1));
     } catch(e) {
       throw new Error("Could not parse response — try again");
     }
