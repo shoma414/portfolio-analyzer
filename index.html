@@ -104,6 +104,8 @@ input[type=file]{display:none;}
 .zone-filter-btn.active-buy{background:#e6f4e6;color:#2d7a2d;border-color:#2d7a2d;}
 .zone-filter-btn.active-watch{background:#fff3e0;color:#a06000;border-color:#a06000;}
 .zone-filter-btn.active-all{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.zone-filter-btn.active-owned{background:#1a5fa8;color:#fff;border-color:#1a5fa8;}
+.zone-filter-btn.full{grid-column:1/-1;}
 
 /* ── Misc ── */
 .no-data{text-align:center;padding:2rem;color:#aaa;font-size:14px;}
@@ -205,6 +207,11 @@ input[type=file]{display:none;}
     <button class="zone-filter-btn" id="zfBuy"   onclick="setZoneFilter('buy')">🟢 Buy zone</button>
     <button class="zone-filter-btn" id="zfWatch" onclick="setZoneFilter('watch')">🟡 Watch zone</button>
   </div>
+  <div style="margin-bottom:12px;">
+    <button class="zone-filter-btn full" id="hideOwnedBtn" onclick="toggleHideOwned()" style="width:100%;text-align:center;">
+      👜 Hide stocks I already own
+    </button>
+  </div>
 
   <!-- Summary -->
   <div class="summary-grid" id="wlSummaryGrid"></div>
@@ -229,6 +236,7 @@ let livePrices = {};
 let priceTimer = null;
 let currentTab = 'lots';
 let zoneFilter = 'all';
+let hideOwned = false;
 
 // Watchlist storage key
 const WL_KEY = 'watchlist_symbols';
@@ -545,6 +553,24 @@ function removeWatchlistSymbol(sym) {
   renderWatchlist();
 }
 
+function getOwnedSymbols() {
+  // Extract unique symbols from the loaded lots CSV
+  return new Set(allRows.map(r => r.Symbol).filter(Boolean));
+}
+
+function toggleHideOwned() {
+  hideOwned = !hideOwned;
+  const btn = document.getElementById('hideOwnedBtn');
+  if (hideOwned) {
+    btn.className = 'zone-filter-btn full active-owned';
+    btn.textContent = '✅ Hiding stocks I already own';
+  } else {
+    btn.className = 'zone-filter-btn full';
+    btn.textContent = '👜 Hide stocks I already own';
+  }
+  renderWatchlist();
+}
+
 function setZoneFilter(f) {
   zoneFilter = f;
   document.getElementById('zfAll').className   = 'zone-filter-btn' + (f==='all'?'   active-all':'');
@@ -675,8 +701,10 @@ function renderWatchlist() {
     return pa-pb;
   });
 
-  // Apply zone filter
+  // Apply zone + owned filter
+  const ownedSymbols = getOwnedSymbols();
   const filtered = sorted.filter(sym => {
+    if (hideOwned && ownedSymbols.has(sym)) return false;
     const d = wlData[sym];
     if (!d || d.loading || d.error || zoneFilter==='all') return true;
     const z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
