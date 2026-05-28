@@ -170,19 +170,32 @@ def save_files(csv_content, portfolio_data, watchlist_data):
 # ── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=== Portfolio Fetcher ===")
+    fetch_email = os.environ.get("FETCH_EMAIL", "true").lower() == "true"
 
-    # Email
-    token       = get_access_token()
-    message_id  = find_latest_email(token)
-    csv_content = get_csv_attachment(token, message_id)
-    port_syms   = extract_symbols(csv_content)
+    if fetch_email:
+        print("Mode: Full update (email + prices)")
+        token       = get_access_token()
+        message_id  = find_latest_email(token)
+        csv_content = get_csv_attachment(token, message_id)
+        port_syms   = extract_symbols(csv_content)
+    else:
+        print("Mode: Price refresh only (no email fetch)")
+        if os.path.exists(CSV_PATH):
+            with open(CSV_PATH, 'r', encoding='utf-8') as f:
+                csv_content = f.read()
+            port_syms = extract_symbols(csv_content)
+        else:
+            csv_content = None
+            port_syms = []
 
-    # Prices
-    print("\n-- Portfolio prices --")
-    portfolio_data = fetch_yfinance_data(port_syms, fields=('regularMarketPrice',))
+    if port_syms:
+        print("\n-- Portfolio prices --")
+        portfolio_data = fetch_yfinance_data(port_syms, fields=('regularMarketPrice',))
+    else:
+        portfolio_data = {}
 
     print("\n-- Watchlist prices + 52W data --")
     watchlist_data = fetch_yfinance_data(WATCHLIST, fields=('regularMarketPrice','fiftyTwoWeekLow'))
 
-    save_files(csv_content, portfolio_data, watchlist_data)
+    save_files(csv_content or '', portfolio_data, watchlist_data)
     print("\n=== Done ✓ ===")
