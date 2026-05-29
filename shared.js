@@ -152,7 +152,11 @@ function switchTab(tab) {
       (i===2 && tab==='signals')
     );
   });
-  if ((tab === 'watchlist' || tab === 'signals') && Object.keys(wlData).length === 0) refreshWatchlist();
+  if ((tab === 'watchlist' || tab === 'signals') && Object.keys(wlData).length === 0) {
+    refreshWatchlist();
+  } else if (tab === 'signals' && Object.keys(wlData).length > 0) {
+    renderSignals();
+  }
 }
 
 // ══════════════════════════════════════════════════
