@@ -95,53 +95,137 @@ def extract_symbols(csv_content):
     print(f"✓ Portfolio symbols: {len(symbols)}")
     return sorted(symbols)
 
-# ── Step 5: Fetch prices using yfinance ──────────────────────────────────────
-def fetch_yfinance_data(symbols, fields=('regularMarketPrice',)):
+# ── Step 5: Fetch prices + technical indicators using yfinance ───────────────
+def calculate_rsi(closes, period=14):
+    """Calculate RSI from a list of closing prices."""
+    if len(closes) < period + 1:
+        return None
+    deltas = [closes[i] - closes[i-1] for i in range(1, len(closes))]
+    gains  = [d if d > 0 else 0 for d in deltas]
+    losses = [-d if d < 0 else 0 for d in deltas]
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    for i in range(period, len(deltas)):
+        avg_gain = (avg_gain * (period-1) + gains[i]) / period
+        avg_loss = (avg_loss * (period-1) + losses[i]) / period
+    if avg_loss == 0:
+        return 100
+    rs = avg_gain / avg_loss
+    return round(100 - (100 / (1 + rs)), 2)
+
+def fetch_portfolio_prices(symbols):
+    """Fast price fetch for portfolio symbols."""
     import yfinance as yf
     result = {}
-    need_52w = 'fiftyTwoWeekLow' in fields
-
-    # For price only: use fast batch download (much faster)
-    # For 52W data: use individual ticker.info (only way to get 52W reliably)
-    if not need_52w:
-        batch_size = 50
-        for i in range(0, len(symbols), batch_size):
-            batch = symbols[i:i+batch_size]
-            try:
-                tickers = yf.Tickers(' '.join(batch))
-                for sym in batch:
-                    try:
-                        info = tickers.tickers[sym].fast_info
-                        price = float(info.last_price or 0)
-                        if price > 0:
-                            result[sym] = {'price': round(price, 4)}
-                            print(f"  {sym}: ${price:.2f}")
-                    except Exception as e:
-                        print(f"  {sym}: skip ({e})")
-            except Exception as e:
-                print(f"Batch error: {e}")
-    else:
-        # Need 52W data — use ticker.info for each symbol
-        for sym in symbols:
-            try:
-                t = yf.Ticker(sym)
-                info = t.info
-                price = float(info.get('regularMarketPrice') or info.get('currentPrice') or 0)
-                low52 = float(info.get('fiftyTwoWeekLow') or 0)
-                high52= float(info.get('fiftyTwoWeekHigh') or 0)
-                if price > 0 and low52 > 0:
-                    result[sym] = {
-                        'price': round(price, 4),
-                        'low52': round(low52, 4),
-                        'high52': round(high52, 4)
-                    }
-                    print(f"  {sym}: ${price:.2f} (52W low: ${low52:.2f})")
-                elif price > 0:
-                    result[sym] = {'price': round(price,4), 'low52': 0, 'high52': 0}
-                    print(f"  {sym}: ${price:.2f} (no 52W data)")
-            except Exception as e:
-                print(f"  {sym}: skip ({e})")
+    batch_size = 50
+    for i in range(0, len(symbols), batch_size):
+        batch = symbols[i:i+batch_size]
+        try:
+            tickers = yf.Tickers(' '.join(batch))
+            for sym in batch:
+                try:
+                    info = tickers.tickers[sym].fast_info
+                    price = float(info.last_price or 0)
+                    if price > 0:
+                        result[sym] = {'price': round(price, 4)}
+                        print(f"  {sym}: ${price:.2f}")
+                except Exception as e:
+                    print(f"  {sym}: skip ({e})")
+        except Exception as e:
+            print(f"Batch error: {e}")
     return result
+
+def fetch_watchlist_data(symbols):
+    """Fetch full data including 52W, technicals for watchlist."""
+    import yfinance as yf
+    result = {}
+    for sym in symbols:
+        try:
+            t = yf.Ticker(sym)
+            info = t.info
+            price  = float(info.get('regularMarketPrice') or info.get('currentPrice') or 0)
+            low52  = float(info.get('fiftyTwoWeekLow') or 0)
+            high52 = float(info.get('fiftyTwoWeekHigh') or 0)
+            name   = info.get('shortName') or info.get('longName') or sym
+
+            if price <= 0:
+                print(f"  {sym}: no price")
+                continue
+
+            entry = {
+                'price': round(price, 4),
+                'low52': round(low52, 4),
+                'high52': round(high52, 4),
+                'name': name,
+            }
+
+            # Fetch historical data for technical indicators (200 days)
+            try:
+                hist = t.history(period='1y')
+                if len(hist) >= 20:
+                    closes = hist['Close'].tolist()
+
+                    # Moving averages
+                    ma50  = round(sum(closes[-50:])  / min(50,  len(closes)), 4) if len(closes) >= 50  else None
+                    ma200 = round(sum(closes[-200:]) / min(200, len(closes)), 4) if len(closes) >= 100 else None
+                    ma20  = round(sum(closes[-20:])  / 20, 4)
+
+                    # RSI (14-period)
+                    rsi = calculate_rsi(closes[-30:], period=14)
+
+                    # Bollinger Bands (20-day, 2 std dev)
+                    if len(closes) >= 20:
+                        recent = closes[-20:]
+                        mean   = sum(recent) / 20
+                        std    = (sum((x-mean)**2 for x in recent) / 20) ** 0.5
+                        bb_upper = round(mean + 2*std, 4)
+                        bb_lower = round(mean - 2*std, 4)
+                        bb_mid   = round(mean, 4)
+                    else:
+                        bb_upper = bb_lower = bb_mid = None
+
+                    # Golden/Death cross signal
+                    cross = None
+                    if ma50 and ma200:
+                        if ma50 > ma200:
+                            # Check if it recently crossed (within last 20 days)
+                            if len(closes) >= 220:
+                                old_ma50  = sum(closes[-70:-20]) / 50
+                                old_ma200 = sum(closes[-220:-20]) / 200
+                                cross = 'golden' if old_ma50 <= old_ma200 else 'above'
+                            else:
+                                cross = 'above'
+                        else:
+                            cross = 'below'
+
+                    entry.update({
+                        'ma20':     ma20,
+                        'ma50':     ma50,
+                        'ma200':    ma200,
+                        'rsi':      rsi,
+                        'bbUpper':  bb_upper,
+                        'bbLower':  bb_lower,
+                        'bbMid':    bb_mid,
+                        'maCross':  cross,
+                    })
+            except Exception as e:
+                print(f"  {sym}: technical calc failed ({e})")
+
+            result[sym] = entry
+            rsi_str = f"RSI:{entry.get('rsi','?')}" if entry.get('rsi') else ''
+            ma_str  = f"MA50:{entry.get('ma50','?'):.2f}" if entry.get('ma50') else ''
+            print(f"  {sym}: ${price:.2f} 52Wlow:${low52:.2f} {rsi_str} {ma_str}")
+
+        except Exception as e:
+            print(f"  {sym}: skip ({e})")
+    return result
+
+def fetch_yfinance_data(symbols, fields=('regularMarketPrice',)):
+    """Backwards-compatible wrapper."""
+    if 'fiftyTwoWeekLow' in fields:
+        return fetch_watchlist_data(symbols)
+    else:
+        return fetch_portfolio_prices(symbols)
 
 # ── Step 6: Save all files ────────────────────────────────────────────────────
 def save_files(csv_content, portfolio_data, watchlist_data):
