@@ -80,8 +80,22 @@ async function fetchWatchlistPrices(symbols) {
     list.forEach(sym => {
       const key = sym === 'BTC' ? 'BTC-USD' : sym;
       const d = data.data[key] || data.data[sym];
-      if (d && d.price && d.low52) {
-        wlData[sym] = { price: d.price, low52: d.low52, high52: d.high52 || 0, loading: false };
+      if (d && d.price) {
+        wlData[sym] = {
+          price:   d.price,
+          low52:   d.low52   || 0,
+          high52:  d.high52  || 0,
+          name:    d.name    || sym,
+          rsi:     d.rsi     ?? null,
+          ma20:    d.ma20    || null,
+          ma50:    d.ma50    || null,
+          ma200:   d.ma200   || null,
+          bbUpper: d.bbUpper || null,
+          bbLower: d.bbLower || null,
+          bbMid:   d.bbMid   || null,
+          maCross: d.maCross || null,
+          loading: false
+        };
       } else {
         wlData[sym] = { loading: false, error: true };
       }
