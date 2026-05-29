@@ -2,9 +2,7 @@ name: Daily Portfolio Update
 
 on:
   schedule:
-    # 2:00 PM UAE time (UTC+4) = 10:00 UTC — main daily run
     - cron: "0 10 * * 1-5"
-    # Price refreshes during US market hours (UAE time: 5:30 PM, 7 PM, 9 PM, 11 PM)
     - cron: "30 13 * * 1-5"
     - cron: "0 15 * * 1-5"
     - cron: "0 17 * * 1-5"
@@ -34,7 +32,6 @@ jobs:
           OUTLOOK_CLIENT_SECRET: ${{ secrets.OUTLOOK_CLIENT_SECRET }}
           OUTLOOK_EMAIL:         ${{ secrets.OUTLOOK_EMAIL }}
           OUTLOOK_REFRESH_TOKEN: ${{ secrets.OUTLOOK_REFRESH_TOKEN }}
-          # Only fetch email on the 2 PM run, price-only on other runs
           FETCH_EMAIL: ${{ github.event.schedule == '0 10 * * 1-5' && 'true' || github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python fetch_csv.py
 
