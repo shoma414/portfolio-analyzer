@@ -81,6 +81,20 @@ input[type=file]{display:none;}
 .buy-lots-table th{text-align:left;color:#aaa;font-weight:500;padding:3px 6px 3px 0;font-size:11px;}
 .buy-lots-table td{padding:4px 6px 4px 0;border-top:1px solid #f5f5f5;color:#1a1a1a;}
 
+/* ── Strategy selector ── */
+.strategy-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.strategy-btn{padding:10px;border-radius:10px;border:1.5px solid #e0e0e0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:#888;text-align:center;}
+.strategy-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.score-bar-wrap{background:#f0f0f0;border-radius:4px;height:6px;margin-top:4px;}
+.score-bar-fill{height:6px;border-radius:4px;}
+.signal-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid #f5f5f5;}
+.signal-row:last-child{border-bottom:none;}
+.signal-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.sig-green{background:#e6f4e6;color:#2d7a2d;}
+.sig-yellow{background:#fff3e0;color:#a06000;}
+.sig-red{background:#fde8e8;color:#c0392b;}
+.sig-grey{background:#f2f2f2;color:#888;}
+
 /* ── Watchlist cards ── */
 .wl-card{background:#fff;border-radius:12px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);}
 .wl-card.zone-buy{border-left:3px solid #2d7a2d;}
@@ -120,9 +134,10 @@ input[type=file]{display:none;}
 <body>
 
 <!-- ── Tabs ── -->
-<div class="tabs">
+<div class="tabs" style="grid-template-columns:1fr 1fr 1fr;">
   <button class="tab-btn active" onclick="switchTab('lots')">📊 My Lots</button>
-  <button class="tab-btn" onclick="switchTab('watchlist')">⭐ Watchlist</button>
+  <button class="tab-btn" onclick="switchTab('watchlist')">⭐ 52W Low</button>
+  <button class="tab-btn" onclick="switchTab('signals')">📊 Signals</button>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -218,6 +233,90 @@ input[type=file]{display:none;}
   <div id="wlArea"></div>
 </div>
 
+<!-- ══════════════════════════════════════════════════
+     TAB 3: SIGNALS (Combined Score)
+═══════════════════════════════════════════════════ -->
+<div id="tab-signals" style="display:none">
+  <div class="header">
+    <h1>📊 Buy Signals</h1>
+    <button class="refresh-btn" onclick="refreshWatchlist()">↻ Refresh</button>
+  </div>
+  <div class="price-updated" id="sigPriceUpdated">Loading...</div>
+
+  <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-size:13px;color:#666;line-height:1.6">
+    Scores each stock across 4 technical signals:<br>
+    📉 <strong>52W Low proximity</strong> (30%) · 
+    📈 <strong>RSI &lt;30 oversold</strong> (25%) · 
+    📊 <strong>Price vs 200MA</strong> (25%) · 
+    ✨ <strong>Golden Cross</strong> (20%)
+  </div>
+
+  <!-- Zone filter -->
+  <div class="wl-filter-row" style="margin-bottom:12px">
+    <button class="zone-filter-btn active-all" id="sigZfAll"   onclick="setSigFilter('all')">All</button>
+    <button class="zone-filter-btn" id="sigZfBuy"   onclick="setSigFilter('buy')">🟢 Score ≥70</button>
+    <button class="zone-filter-btn" id="sigZfWatch" onclick="setSigFilter('watch')">🟡 Score ≥45</button>
+  </div>
+
+  <!-- Hide owned -->
+  <div style="margin-bottom:12px">
+    <button class="zone-filter-btn full" id="sigHideOwnedBtn" onclick="toggleSigHideOwned()" style="width:100%;text-align:center;">
+      👜 Hide stocks I already own
+    </button>
+  </div>
+
+  <div class="summary-grid" id="sigSummaryGrid"></div>
+  <div id="sigArea"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 3: SIGNALS (Combined Score)
+═══════════════════════════════════════════════════ -->
+<div id="tab-signals" style="display:none">
+  <div class="header">
+    <h1>📊 Buy Signals</h1>
+    <button class="refresh-btn" onclick="refreshWatchlist()">↻ Refresh</button>
+  </div>
+  <div class="price-updated" id="signalsPriceUpdated"></div>
+
+  <div style="background:#e3eeff;border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;color:#1a5fa8;line-height:1.6">
+    <strong>Combined Score Strategy</strong> — scores each stock across 4 technical signals:<br>
+    📉 52W Low proximity (30%) · 📈 RSI oversold (25%) · 📊 Price vs 200MA (25%) · ✨ MA Cross (20%)
+  </div>
+
+  <!-- Zone filter -->
+  <div class="wl-filter-row" style="margin-bottom:12px">
+    <button class="zone-filter-btn active-all" id="sfAll"   onclick="setSignalFilter('all')">All</button>
+    <button class="zone-filter-btn" id="sfBuy"   onclick="setSignalFilter('buy')">🟢 Score ≥70</button>
+    <button class="zone-filter-btn" id="sfWatch" onclick="setSignalFilter('watch')">🟡 Score ≥45</button>
+  </div>
+
+  <!-- Hide owned toggle -->
+  <div style="margin-bottom:12px;">
+    <button class="zone-filter-btn full" id="hideOwnedSignalsBtn" onclick="toggleHideOwnedSignals()" style="width:100%;text-align:center;">
+      👜 Hide stocks I already own
+    </button>
+  </div>
+
+  <!-- Zone thresholds (used in 52W scoring) -->
+  <div class="controls" style="margin-bottom:12px;">
+    <div class="wl-pct-row">
+      <div class="ctrl-group">
+        <label>🟢 Buy zone (52W low ×)</label>
+        <input type="number" id="sigBuyZonePct" value="105" min="100" max="200" step="1">
+      </div>
+      <div class="ctrl-group">
+        <label>🟡 Watch zone (52W low ×)</label>
+        <input type="number" id="sigWatchZonePct" value="110" min="100" max="200" step="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-grid" id="signalsSummaryGrid"></div>
+  <div id="signalsArea"></div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════
 // SHARED STATE
@@ -258,6 +357,96 @@ let priceTimer = null;
 let currentTab = 'lots';
 let zoneFilter = 'all';
 let hideOwned = false;
+let currentStrategy = '52w';
+
+function setStrategy(s) {
+  currentStrategy = s;
+  document.getElementById('strat52w').className      = 'strategy-btn' + (s==='52w'      ? ' active' : '');
+  document.getElementById('stratCombined').className = 'strategy-btn' + (s==='combined' ? ' active' : '');
+  renderWatchlist();
+}
+
+// ── Combined Score Calculator ─────────────────────────────────────────────────
+function calcCombinedScore(d, buyZonePct, watchZonePct) {
+  if (!d || d.loading || d.error || !d.price) return null;
+  let score = 0;
+  const signals = [];
+
+  // Signal 1: 52W Low proximity (30% weight)
+  if (d.low52 > 0) {
+    const aboveLow = (d.price - d.low52) / d.low52 * 100;
+    const buyThreshold   = d.low52 * (buyZonePct/100);
+    const watchThreshold = d.low52 * (watchZonePct/100);
+    if (d.price <= buyThreshold) {
+      score += 30;
+      signals.push({ label: '52W Low', note: `${aboveLow.toFixed(1)}% above low`, rating: 'green' });
+    } else if (d.price <= watchThreshold) {
+      score += 15;
+      signals.push({ label: '52W Low', note: `${aboveLow.toFixed(1)}% above low`, rating: 'yellow' });
+    } else {
+      score += 0;
+      signals.push({ label: '52W Low', note: `${aboveLow.toFixed(1)}% above low`, rating: 'red' });
+    }
+  }
+
+  // Signal 2: RSI (25% weight)
+  if (d.rsi !== undefined && d.rsi !== null) {
+    if (d.rsi < 30) {
+      score += 25;
+      signals.push({ label: 'RSI', note: `${d.rsi} — Oversold`, rating: 'green' });
+    } else if (d.rsi < 45) {
+      score += 12;
+      signals.push({ label: 'RSI', note: `${d.rsi} — Approaching oversold`, rating: 'yellow' });
+    } else if (d.rsi < 70) {
+      score += 5;
+      signals.push({ label: 'RSI', note: `${d.rsi} — Neutral`, rating: 'grey' });
+    } else {
+      score += 0;
+      signals.push({ label: 'RSI', note: `${d.rsi} — Overbought`, rating: 'red' });
+    }
+  }
+
+  // Signal 3: Price vs 200MA (25% weight)
+  if (d.ma200) {
+    const vsMA200 = (d.price - d.ma200) / d.ma200 * 100;
+    if (vsMA200 < -10) {
+      score += 25;
+      signals.push({ label: 'vs 200MA', note: `${vsMA200.toFixed(1)}% below MA200`, rating: 'green' });
+    } else if (vsMA200 < -5) {
+      score += 15;
+      signals.push({ label: 'vs 200MA', note: `${vsMA200.toFixed(1)}% below MA200`, rating: 'yellow' });
+    } else if (vsMA200 < 0) {
+      score += 8;
+      signals.push({ label: 'vs 200MA', note: `${vsMA200.toFixed(1)}% below MA200`, rating: 'yellow' });
+    } else {
+      score += 0;
+      signals.push({ label: 'vs 200MA', note: `+${vsMA200.toFixed(1)}% above MA200`, rating: 'grey' });
+    }
+  }
+
+  // Signal 4: MA Cross (20% weight)
+  if (d.maCross) {
+    if (d.maCross === 'golden') {
+      score += 20;
+      signals.push({ label: 'MA Cross', note: 'Golden Cross ✨', rating: 'green' });
+    } else if (d.maCross === 'above') {
+      score += 8;
+      signals.push({ label: 'MA Cross', note: '50MA above 200MA', rating: 'yellow' });
+    } else {
+      score += 0;
+      signals.push({ label: 'MA Cross', note: 'Death Cross ⚠️', rating: 'red' });
+    }
+  }
+
+  // Bollinger Band bonus (no extra weight, enhances RSI signal)
+  if (d.bbLower && d.price <= d.bbLower) {
+    score = Math.min(100, score + 5);
+    signals.push({ label: 'Bollinger', note: 'Below lower band', rating: 'green' });
+  }
+
+  const zone = score >= 70 ? 'buy' : score >= 45 ? 'watch' : 'wait';
+  return { score: Math.round(score), zone, signals };
+}
 
 // Watchlist storage key
 const WL_KEY = 'watchlist_symbols';
@@ -275,10 +464,15 @@ function switchTab(tab) {
   currentTab = tab;
   document.getElementById('tab-lots').style.display      = tab === 'lots'      ? 'block' : 'none';
   document.getElementById('tab-watchlist').style.display = tab === 'watchlist' ? 'block' : 'none';
+  document.getElementById('tab-signals').style.display   = tab === 'signals'   ? 'block' : 'none';
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', (i===0 && tab==='lots') || (i===1 && tab==='watchlist'));
+    b.classList.toggle('active',
+      (i===0 && tab==='lots') ||
+      (i===1 && tab==='watchlist') ||
+      (i===2 && tab==='signals')
+    );
   });
-  if (tab === 'watchlist' && Object.keys(wlData).length === 0) refreshWatchlist();
+  if ((tab === 'watchlist' || tab === 'signals') && Object.keys(wlData).length === 0) refreshWatchlist();
 }
 
 // ══════════════════════════════════════════════════
@@ -689,56 +883,259 @@ function renderWatchlist() {
   const list = getWatchlist();
   const buyZonePct   = parseFloat(document.getElementById('buyZonePct').value)   || 105;
   const watchZonePct = parseFloat(document.getElementById('watchZonePct').value) || 110;
+  const ownedSymbols = getOwnedSymbols();
+
+  // Sync signals tab price timestamp if it exists
+  try {
+    const sigUpd = document.getElementById('sigPriceUpdated');
+    const wlUpd  = document.getElementById('wlPriceUpdated');
+    if (sigUpd && wlUpd) sigUpd.innerHTML = wlUpd.innerHTML;
+  } catch(e) {}
 
   // Count zones
   let buyCount=0, watchCount=0, waitCount=0;
   list.forEach(sym => {
     const d = wlData[sym];
-    if (!d || d.loading || d.error) return;
-    const z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
+    if (!d || d.loading || d.error || !d.price) return;
+    let z;
+    z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
     if (z==='buy') buyCount++;
     else if (z==='watch') watchCount++;
     else waitCount++;
   });
 
+  const stratLabel = '🟢 Buy zone';
   document.getElementById('wlSummaryGrid').innerHTML = `
     <div class="metric"><div class="metric-label">Watchlist total</div><div class="metric-val">${list.length}</div></div>
-    <div class="metric"><div class="metric-label">🟢 Buy zone</div><div class="metric-val c-sell">${buyCount}</div></div>
+    <div class="metric"><div class="metric-label">${stratLabel}</div><div class="metric-val c-sell">${buyCount}</div></div>
     <div class="metric"><div class="metric-label">🟡 Watch zone</div><div class="metric-val c-warn">${watchCount}</div></div>
     <div class="metric"><div class="metric-label">⚪ Wait</div><div class="metric-val c-wait">${waitCount}</div></div>`;
 
-  // Sort: buy first, then watch, then wait, then loading
+  // Sort
   const zoneOrder = { buy:0, watch:1, wait:2 };
   const sorted = [...list].sort((a,b) => {
     const da=wlData[a], db=wlData[b];
     if (!da||da.loading) return 1; if (!db||db.loading) return -1;
     if (da.error) return 1; if (db.error) return -1;
     const za=getZone(da.price,da.low52,buyZonePct,watchZonePct);
-    const zb=getZone(db.price,db.low52,buyZonePct,watchZonePct);
-    if (zoneOrder[za]!==zoneOrder[zb]) return zoneOrder[za]-zoneOrder[zb];
-    // Within same zone, sort by % above 52W low ascending
-    const pa=(da.price-da.low52)/da.low52;
-    const pb=(db.price-db.low52)/db.low52;
-    return pa-pb;
+      const zb=getZone(db.price,db.low52,buyZonePct,watchZonePct);
+      if (zoneOrder[za]!==zoneOrder[zb]) return zoneOrder[za]-zoneOrder[zb];
+      return ((da.price-da.low52)/da.low52) - ((db.price-db.low52)/db.low52);
   });
 
-  // Apply zone + owned filter
-  const ownedSymbols = getOwnedSymbols();
+  // Filter
   const filtered = sorted.filter(sym => {
     if (hideOwned && ownedSymbols.has(sym)) return false;
     const d = wlData[sym];
-    if (!d || d.loading || d.error || zoneFilter==='all') return true;
-    const z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
+    if (!d || d.loading || d.error) return zoneFilter === 'all';
+    if (zoneFilter === 'all') return true;
+    let z;
+    z = getZone(d.price, d.low52, buyZonePct, watchZonePct);
     return z === zoneFilter;
   });
 
   const html = filtered.map(sym => wlCardHtml(sym, wlData[sym]||{loading:true}, buyZonePct, watchZonePct)).join('');
-  document.getElementById('wlArea').innerHTML = html || `<div class="no-data">No stocks in this zone.</div>`;
+  document.getElementById('wlArea').innerHTML = html || `<div class="no-data">No stocks match the current filters.</div>`;
+  // Also update signals tab if data is loaded
+  if (Object.keys(wlData).length > 0) renderSignals();
 }
+
+function combinedCardHtml(sym, d, buyZonePct, watchZonePct) {
+  if (d.loading) return `<div class="wl-card loading"><div class="wl-top"><div class="wl-sym">${sym}</div></div><div style="font-size:12px;color:#aaa">Loading...</div></div>`;
+  if (d.error || !d.price) return `<div class="wl-card zone-wait"><div class="wl-top"><div><div class="wl-sym">${sym}</div></div><button class="remove-btn" onclick="removeWatchlistSymbol('${sym}')">✕</button></div><div style="font-size:12px;color:#aaa">Could not load price</div></div>`;
+
+  const cs = calcCombinedScore(d, buyZonePct, watchZonePct);
+  if (!cs) return wlCardHtml(sym, d, buyZonePct, watchZonePct);
+
+  const { score, zone, signals } = cs;
+  const scoreColor = score >= 70 ? '#2d7a2d' : score >= 45 ? '#a06000' : '#888';
+  const badgeClass = zone==='buy' ? 'badge-zone-buy' : zone==='watch' ? 'badge-zone-watch' : 'badge-zone-wait';
+  const badgeLabel = zone==='buy' ? '🟢 Buy' : zone==='watch' ? '🟡 Watch' : '⚪ Wait';
+  const ratingClass = r => r==='green'?'sig-green':r==='yellow'?'sig-yellow':r==='red'?'sig-red':'sig-grey';
+
+  const signalsHtml = signals.map(s => `
+    <div class="signal-row"><span>${s.label}</span><span class="signal-badge ${ratingClass(s.rating)}">${s.note}</span></div>`).join('');
+
+  return `<div class="wl-card zone-${zone}">
+    <div class="wl-top">
+      <div><div class="wl-sym">${sym}</div><div style="font-size:11px;color:#aaa;margin-top:2px">${d.name||''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:${scoreColor}">${score}</div>
+          <div style="font-size:10px;color:#aaa">/100</div>
+        </div>
+        <span class="badge ${badgeClass}">${badgeLabel}</span>
+        <button class="remove-btn" onclick="removeWatchlistSymbol('${sym}')">✕</button>
+      </div>
+    </div>
+    <div class="score-bar-wrap" style="margin-bottom:10px">
+      <div class="score-bar-fill" style="width:${score}%;background:${scoreColor}"></div>
+    </div>
+    <div class="lot-grid" style="margin-bottom:10px">
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.price.toFixed(2)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">RSI (14)</span><span class="lot-field-val ${d.rsi<30?'pos':d.rsi>70?'neg':''}">${d.rsi ?? '—'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">MA50</span><span class="lot-field-val">${d.ma50 ? '$'+d.ma50.toFixed(2) : '—'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">MA200</span><span class="lot-field-val">${d.ma200 ? '$'+d.ma200.toFixed(2) : '—'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">52W Low</span><span class="lot-field-val">${d.low52 ? '$'+d.low52.toFixed(2) : '—'}</span></div>
+      <div class="lot-field"><span class="lot-field-label">BB Lower</span><span class="lot-field-val">${d.bbLower ? '$'+d.bbLower.toFixed(2) : '—'}</span></div>
+    </div>
+    <div style="border-top:1px solid #f0f0f0;padding-top:8px">${signalsHtml}</div>
+  </div>`;
+}
+
 
 ['buyZonePct','watchZonePct'].forEach(id =>
   document.getElementById(id).addEventListener('change', renderWatchlist)
 );
+
+// ══════════════════════════════════════════════════
+// SIGNALS TAB
+// ══════════════════════════════════════════════════
+let sigZoneFilter = 'all';
+let sigHideOwned  = false;
+
+function setSigFilter(f) {
+  sigZoneFilter = f;
+  document.getElementById('sigZfAll').className   = 'zone-filter-btn' + (f==='all'  ? ' active-all'   : '');
+  document.getElementById('sigZfBuy').className   = 'zone-filter-btn' + (f==='buy'  ? ' active-buy'   : '');
+  document.getElementById('sigZfWatch').className = 'zone-filter-btn' + (f==='watch'? ' active-watch' : '');
+  renderSignals();
+}
+
+function toggleSigHideOwned() {
+  sigHideOwned = !sigHideOwned;
+  const btn = document.getElementById('sigHideOwnedBtn');
+  btn.className = 'zone-filter-btn full' + (sigHideOwned ? ' active-owned' : '');
+  btn.textContent = sigHideOwned ? '✅ Hiding stocks I already own' : '👜 Hide stocks I already own';
+  renderSignals();
+}
+
+function renderSignals() {
+  const list = getWatchlist();
+  const buyZonePct   = parseFloat(document.getElementById('buyZonePct')?.value  || 105);
+  const watchZonePct = parseFloat(document.getElementById('watchZonePct')?.value || 110);
+  const ownedSymbols = getOwnedSymbols();
+
+  // Update price timestamp
+  const wlUpdEl = document.getElementById('wlPriceUpdated');
+  const sigUpdEl = document.getElementById('sigPriceUpdated');
+  if (wlUpdEl && sigUpdEl) sigUpdEl.innerHTML = wlUpdEl.innerHTML;
+
+  // Score all stocks
+  let buyCount=0, watchCount=0, waitCount=0;
+  const scored = list.map(sym => {
+    const d = wlData[sym];
+    if (!d || d.loading || d.error || !d.price) return { sym, d: d||{loading:true}, score:0, zone:'wait' };
+    const cs = calcCombinedScore(d, buyZonePct, watchZonePct);
+    const zone = cs ? cs.zone : 'wait';
+    if (zone==='buy') buyCount++;
+    else if (zone==='watch') watchCount++;
+    else waitCount++;
+    return { sym, d, score: cs?.score||0, zone, cs };
+  });
+
+  document.getElementById('sigSummaryGrid').innerHTML = `
+    <div class="metric"><div class="metric-label">Total screened</div><div class="metric-val">${list.length}</div></div>
+    <div class="metric"><div class="metric-label">🟢 Score ≥70</div><div class="metric-val c-sell">${buyCount}</div></div>
+    <div class="metric"><div class="metric-label">🟡 Score ≥45</div><div class="metric-val c-warn">${watchCount}</div></div>
+    <div class="metric"><div class="metric-label">⚪ Below 45</div><div class="metric-val c-wait">${waitCount}</div></div>`;
+
+  // Sort by score descending
+  scored.sort((a,b) => b.score - a.score);
+
+  // Filter
+  const filtered = scored.filter(item => {
+    if (sigHideOwned && ownedSymbols.has(item.sym)) return false;
+    if (sigZoneFilter === 'all') return true;
+    return item.zone === sigZoneFilter;
+  });
+
+  const html = filtered.map(item =>
+    combinedCardHtml(item.sym, item.d, buyZonePct, watchZonePct)
+  ).join('');
+
+  document.getElementById('sigArea').innerHTML = html || `<div class="no-data">No stocks match the current filters.</div>`;
+}
+
+// ══════════════════════════════════════════════════
+// SIGNALS TAB
+// ══════════════════════════════════════════════════
+let signalFilter = 'all';
+let hideOwnedSignals = false;
+
+function setSignalFilter(f) {
+  signalFilter = f;
+  document.getElementById('sfAll').className   = 'zone-filter-btn' + (f==='all'?'   active-all':'');
+  document.getElementById('sfBuy').className   = 'zone-filter-btn' + (f==='buy'?'   active-buy':'');
+  document.getElementById('sfWatch').className = 'zone-filter-btn' + (f==='watch'?' active-watch':'');
+  renderSignals();
+}
+
+function toggleHideOwnedSignals() {
+  hideOwnedSignals = !hideOwnedSignals;
+  const btn = document.getElementById('hideOwnedSignalsBtn');
+  if (hideOwnedSignals) {
+    btn.className = 'zone-filter-btn full active-owned';
+    btn.textContent = '✅ Hiding stocks I already own';
+  } else {
+    btn.className = 'zone-filter-btn full';
+    btn.textContent = '👜 Hide stocks I already own';
+  }
+  renderSignals();
+}
+
+function renderSignals() {
+  const signalsArea = document.getElementById('signalsArea');
+  const summaryGrid = document.getElementById('signalsSummaryGrid');
+  if (!signalsArea || !summaryGrid) return;
+
+  const list = getWatchlist();
+  const buyZonePct   = parseFloat(document.getElementById('sigBuyZonePct')?.value)   || 105;
+  const watchZonePct = parseFloat(document.getElementById('sigWatchZonePct')?.value) || 110;
+  const ownedSymbols = getOwnedSymbols();
+
+  // Update price updated label
+  const wlPU = document.getElementById('wlPriceUpdated');
+  const sigPU = document.getElementById('signalsPriceUpdated');
+  if (wlPU && sigPU) sigPU.innerHTML = wlPU.innerHTML;
+
+  // Score all stocks
+  let buyCount=0, watchCount=0, waitCount=0;
+  const scored = list.map(sym => {
+    const d = wlData[sym];
+    if (!d || d.loading || d.error || !d.price) return { sym, d: d||{loading:true}, score: -1, zone: 'wait' };
+    const cs = calcCombinedScore(d, buyZonePct, watchZonePct);
+    const score = cs ? cs.score : 0;
+    const zone  = cs ? cs.zone  : 'wait';
+    if (zone==='buy') buyCount++;
+    else if (zone==='watch') watchCount++;
+    else waitCount++;
+    return { sym, d, score, zone, cs };
+  }).sort((a,b) => b.score - a.score);
+
+  summaryGrid.innerHTML = `
+    <div class="metric"><div class="metric-label">Stocks tracked</div><div class="metric-val">${list.length}</div></div>
+    <div class="metric"><div class="metric-label">🟢 Score ≥70</div><div class="metric-val c-sell">${buyCount}</div></div>
+    <div class="metric"><div class="metric-label">🟡 Score ≥45</div><div class="metric-val c-warn">${watchCount}</div></div>
+    <div class="metric"><div class="metric-label">⚪ Below 45</div><div class="metric-val c-wait">${waitCount}</div></div>`;
+
+  const filtered = scored.filter(({ sym, zone }) => {
+    if (hideOwnedSignals && ownedSymbols.has(sym)) return false;
+    if (signalFilter === 'all') return true;
+    return zone === signalFilter;
+  });
+
+  const html = filtered.map(({ sym, d, cs }) =>
+    combinedCardHtml(sym, d, buyZonePct, watchZonePct)
+  ).join('');
+
+  signalsArea.innerHTML = html || `<div class="no-data">No stocks match the current filters.</div>`;
+}
+
+['sigBuyZonePct','sigWatchZonePct'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', renderSignals);
+});
 
 // ══════════════════════════════════════════════════
 // INIT
