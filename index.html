@@ -119,44 +119,7 @@
     <h1>📊 Buy Signals</h1>
     <button class="refresh-btn" onclick="refreshWatchlist()">↻ Refresh</button>
   </div>
-  <div class="price-updated" id="sigPriceUpdated">Loading...</div>
-
-  <div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);font-size:13px;color:#666;line-height:1.6">
-    Scores each stock across 4 technical signals:<br>
-    📉 <strong>52W Low proximity</strong> (30%) · 
-    📈 <strong>RSI &lt;30 oversold</strong> (25%) · 
-    📊 <strong>Price vs 200MA</strong> (25%) · 
-    ✨ <strong>Golden Cross</strong> (20%)
-  </div>
-
-  <!-- Zone filter -->
-  <div class="wl-filter-row" style="margin-bottom:12px">
-    <button class="zone-filter-btn active-all" id="sigZfAll"   onclick="setSigFilter('all')">All</button>
-    <button class="zone-filter-btn" id="sigZfBuy"   onclick="setSigFilter('buy')">🟢 Score ≥70</button>
-    <button class="zone-filter-btn" id="sigZfWatch" onclick="setSigFilter('watch')">🟡 Score ≥45</button>
-  </div>
-
-  <!-- Hide owned -->
-  <div style="margin-bottom:12px">
-    <button class="zone-filter-btn full" id="sigHideOwnedBtn" onclick="toggleSigHideOwned()" style="width:100%;text-align:center;">
-      👜 Hide stocks I already own
-    </button>
-  </div>
-
-  <div class="summary-grid" id="sigSummaryGrid"></div>
-  <div id="sigArea"></div>
-</div>
-
-
-<!-- ══════════════════════════════════════════════════
-     TAB 3: SIGNALS (Combined Score)
-═══════════════════════════════════════════════════ -->
-<div id="tab-signals" style="display:none">
-  <div class="header">
-    <h1>📊 Buy Signals</h1>
-    <button class="refresh-btn" onclick="refreshWatchlist()">↻ Refresh</button>
-  </div>
-  <div class="price-updated" id="signalsPriceUpdated"></div>
+  <div class="price-updated" id="signalsPriceUpdated">Loading...</div>
 
   <div style="background:#e3eeff;border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;color:#1a5fa8;line-height:1.6">
     <strong>Combined Score Strategy</strong> — scores each stock across 4 technical signals:<br>
@@ -170,14 +133,14 @@
     <button class="zone-filter-btn" id="sfWatch" onclick="setSignalFilter('watch')">🟡 Score ≥45</button>
   </div>
 
-  <!-- Hide owned toggle -->
-  <div style="margin-bottom:12px;">
+  <!-- Hide owned -->
+  <div style="margin-bottom:12px">
     <button class="zone-filter-btn full" id="hideOwnedSignalsBtn" onclick="toggleHideOwnedSignals()" style="width:100%;text-align:center;">
       👜 Hide stocks I already own
     </button>
   </div>
 
-  <!-- Zone thresholds (used in 52W scoring) -->
+  <!-- Zone thresholds -->
   <div class="controls" style="margin-bottom:12px;">
     <div class="wl-pct-row">
       <div class="ctrl-group">
@@ -191,8 +154,8 @@
     </div>
   </div>
 
-  <div class="summary-grid" id="signalsSummaryGrid"></div>
-  <div id="signalsArea"></div>
+  <div class="summary-grid" id="sigSummaryGrid"></div>
+  <div id="sigArea"></div>
 </div>
 
 <script src="shared.js"></script>
