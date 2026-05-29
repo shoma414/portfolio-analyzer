@@ -56,6 +56,7 @@ function setZoneFilter(f) {
   document.getElementById('zfBuy').className   = 'zone-filter-btn' + (f==='buy'?'   active-buy':'');
   document.getElementById('zfWatch').className = 'zone-filter-btn' + (f==='watch'?' active-watch':'');
   renderWatchlist();
+  if (currentTab === 'signals') renderSignals();
 }
 
 async function refreshWatchlist() {
@@ -96,6 +97,7 @@ async function fetchWatchlistPrices(symbols) {
       "⚠ Could not load prices — run workflow manually to generate watchlist.json";
   }
   renderWatchlist();
+  if (currentTab === 'signals') renderSignals();
 }
 
 function getZone(price, low52, buyZonePct, watchZonePct) {
@@ -200,8 +202,6 @@ function renderWatchlist() {
 
   const html = filtered.map(sym => wlCardHtml(sym, wlData[sym]||{loading:true}, buyZonePct, watchZonePct)).join('');
   document.getElementById('wlArea').innerHTML = html || `<div class="no-data">No stocks match the current filters.</div>`;
-  // Also update signals tab if data is loaded
-  if (Object.keys(wlData).length > 0) renderSignals();
 }
 
 function combinedCardHtml(sym, d, buyZonePct, watchZonePct) {
