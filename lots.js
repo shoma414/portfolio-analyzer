@@ -180,7 +180,7 @@ function buyCardHtml(d, p) {
       <span class="badge badge-buy">Buy ↓</span>
     </div>
     <div class="buy-summary">
-      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${priceTag}${changeBadge}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Price</span><span class="lot-field-val">$${d.mark.toFixed(2)}${priceTag}</span></div>
       <div class="lot-field"><span class="lot-field-label">Lowest lot</span><span class="lot-field-val">$${d.lowestCost.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Drop from lowest</span><span class="lot-field-val neg">${dropPct}%</span></div>
       <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
