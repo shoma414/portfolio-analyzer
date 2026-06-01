@@ -168,11 +168,27 @@ function applyFilters(lots, buyGroups) {
 
 function buyCardHtml(d, p) {
   const dropPct = (((d.mark-d.lowestCost)/d.lowestCost)*100).toFixed(1);
+
+  // Calculate totals per lot
+  const totalInvested = d.lots.reduce((sum, l) => sum + (l.cost * l.qty), 0);
+  const totalCurrentVal = d.lots.reduce((sum, l) => sum + (l.mark * l.qty), 0);
+
   const lotsRows = d.lots.map(l => {
     const lPct=(((l.mark-l.cost)/l.cost)*100).toFixed(1);
     const lPnl=(l.pnl>=0?'+':'')+'$'+Math.abs(l.pnl).toFixed(0);
-    return `<tr><td>${fmtDate(l.date)}</td><td>$${l.cost.toFixed(2)}</td><td>${l.qty}</td><td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td><td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td></tr>`;
+    const lInvested = (l.cost * l.qty).toFixed(0);
+    return `<tr><td>${fmtDate(l.date)}</td><td>$${l.cost.toFixed(2)}</td><td>${l.qty}</td><td>$${lInvested}</td><td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td><td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td></tr>`;
   }).join('');
+
+  // Totals row
+  const totalsRow = `<tr style="border-top:2px solid #e0e0e0;font-weight:600">
+    <td>Total</td><td>—</td>
+    <td>${d.totalQty.toFixed(2)}</td>
+    <td>$${totalInvested.toFixed(0)}</td>
+    <td>—</td>
+    <td class="${d.totalPnl>=0?'pos':'neg'}">${d.totalPnl>=0?'+':''}$${Math.abs(d.totalPnl).toFixed(0)}</td>
+  </tr>`;
+
   const priceTag = d.isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>';
   return `<div class="buy-card">
     <div class="buy-card-top">
@@ -186,11 +202,13 @@ function buyCardHtml(d, p) {
       <div class="lot-field"><span class="lot-field-label">Buy trigger ≤</span><span class="lot-field-val">$${d.buyTrigger.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Total qty</span><span class="lot-field-val">${d.totalQty.toFixed(2)}</span></div>
       <div class="lot-field"><span class="lot-field-label">Total P&L</span><span class="lot-field-val ${d.totalPnl>=0?'pos':'neg'}">${d.totalPnl>=0?'+':''}$${Math.abs(d.totalPnl).toFixed(0)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Total invested</span><span class="lot-field-val">$${totalInvested.toFixed(0)}</span></div>
+      <div class="lot-field"><span class="lot-field-label">Current value</span><span class="lot-field-val ${totalCurrentVal>=totalInvested?'pos':'neg'}">$${totalCurrentVal.toFixed(0)}</span></div>
     </div>
     <div class="buy-lots-label">All lots</div>
     <table class="buy-lots-table">
-      <thead><tr><th>Opened</th><th>Cost</th><th>Qty</th><th>Chg%</th><th>P&L</th></tr></thead>
-      <tbody>${lotsRows}</tbody>
+      <thead><tr><th>Opened</th><th>Cost</th><th>Qty</th><th>Invested</th><th>Chg%</th><th>P&L</th></tr></thead>
+      <tbody>${lotsRows}${totalsRow}</tbody>
     </table>
   </div>`;
 }
