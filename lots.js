@@ -173,8 +173,6 @@ function buyCardHtml(d, p) {
     const lPnl=(l.pnl>=0?'+':'')+'$'+Math.abs(l.pnl).toFixed(0);
     return `<tr><td>${fmtDate(l.date)}</td><td>$${l.cost.toFixed(2)}</td><td>${l.qty}</td><td class="${l.pct>=0?'pos':'neg'}">${lPct}%</td><td class="${l.pnl>=0?'pos':'neg'}">${lPnl}</td></tr>`;
   }).join('');
-  const sp2 = d.lots && d.lots[0]?.priceSession;
-  const changeBadge = sp2?.changePct ? `<span style="font-size:10px;margin-left:3px;color:${sp2.changePct>0?'#2d7a2d':'#c0392b'}">${sp2.changePct>0?'+':''}${sp2.changePct.toFixed(2)}%</span>` : '';
   const priceTag = d.isLive ? '<span class="tag-live">LIVE</span>' : '<span class="tag-csv">CSV</span>';
   return `<div class="buy-card">
     <div class="buy-card-top">
