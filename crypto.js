@@ -15,6 +15,9 @@ const COIN_COLORS = {
   HBAR: "#222222", ADA:  "#0033ad", AVAX: "#e84142",
 };
 
+let cryptoAllLots   = [];
+let cryptoSignalFilter = "all";
+
 function getCoinIcon(coin) {
   const color = COIN_COLORS[coin] || "#888";
   return `<span style="
@@ -33,14 +36,36 @@ function fmt(n, d=2) {
 }
 
 function fmtPrice(p) {
+  if (!p || p <= 0) return "—";
   if (p >= 1000) return "$" + fmt(p, 2);
   if (p >= 1)    return "$" + fmt(p, 4);
   return "$" + fmt(p, 6);
 }
 
+function setCryptoFilter(f) {
+  cryptoSignalFilter = f;
+  // Update button styles
+  ["all","SELL","NEAR_SELL","BUY","HOLD"].forEach(k => {
+    const btn = document.getElementById("cf-" + k);
+    if (!btn) return;
+    const isActive = f === k;
+    if (k === "all") {
+      btn.style.background    = isActive ? "#333" : "transparent";
+      btn.style.color         = isActive ? "#fff" : "#333";
+      btn.style.borderColor   = isActive ? "#333" : "#ddd";
+    } else {
+      const cfg = SIGNAL_CONFIG[k];
+      btn.style.background  = isActive ? cfg.color : "transparent";
+      btn.style.color       = isActive ? "#fff"    : cfg.color;
+      btn.style.borderColor = cfg.color;
+    }
+  });
+  renderCryptoTable();
+}
+
 function renderSummaryCards(lots, updatedUAE) {
   const totalValue   = lots.reduce((s,l) => s + (l.market_value||0), 0);
-  const totalCost    = lots.reduce((s,l) => s + (l.cost_usd * l.qty), 0);
+  const totalCost    = lots.reduce((s,l) => s + (l.cost_usd > 0 ? l.cost_usd * l.qty : 0), 0);
   const totalGainPct = totalCost > 0 ? ((totalValue - totalCost) / totalCost * 100) : 0;
   const sellCount    = lots.filter(l => l.signal==="SELL").length;
   const nearCount    = lots.filter(l => l.signal==="NEAR_SELL").length;
@@ -70,12 +95,56 @@ function renderSummaryCards(lots, updatedUAE) {
         <div class="cr-sub">lots at opportunity</div>
       </div>
     </div>
-    <div style="font-size:12px;color:#999;margin-bottom:16px;">Last updated: ${updatedUAE} UAE</div>
+    <div style="font-size:12px;color:#999;margin-bottom:12px;">Last updated: ${updatedUAE} UAE</div>
   `;
 }
 
-function renderLotsTable(lots) {
-  // Group by coin, sort each group by date asc
+function renderFilterBar() {
+  function btnStyle(k) {
+    const isActive = cryptoSignalFilter === k;
+    if (k === "all") return `
+      id="cf-all"
+      style="padding:6px 14px;border-radius:20px;border:1px solid #ddd;
+      background:${isActive?"#333":"transparent"};color:${isActive?"#fff":"#333"};
+      font-size:12px;font-weight:600;cursor:pointer;"
+      onclick="setCryptoFilter('all')"`;
+    const cfg = SIGNAL_CONFIG[k];
+    return `
+      id="cf-${k}"
+      style="padding:6px 14px;border-radius:20px;border:1px solid ${cfg.color};
+      background:${isActive?cfg.color:"transparent"};color:${isActive?"#fff":cfg.color};
+      font-size:12px;font-weight:600;cursor:pointer;"
+      onclick="setCryptoFilter('${k}')"`;
+  }
+  return `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <span style="font-size:13px;font-weight:600;color:#333;margin-right:4px;">Filter:</span>
+      <button ${btnStyle("all")}>All</button>
+      <button ${btnStyle("SELL")}>🔴 Sell</button>
+      <button ${btnStyle("NEAR_SELL")}>🟡 Near Sell</button>
+      <button ${btnStyle("BUY")}>🟢 Buy</button>
+      <button ${btnStyle("HOLD")}>⚪ Hold</button>
+    </div>`;
+}
+
+function renderCryptoTable() {
+  const tableArea = document.getElementById("crypto-table-area");
+  if (!tableArea) return;
+
+  // Apply filter
+  const lots = cryptoSignalFilter === "all"
+    ? cryptoAllLots
+    : cryptoAllLots.filter(l => l.signal === cryptoSignalFilter);
+
+  if (lots.length === 0) {
+    tableArea.innerHTML = `
+      <div style="padding:40px;text-align:center;color:#999;font-size:13px;">
+        No lots match the selected filter.
+      </div>`;
+    return;
+  }
+
+  // Group by coin
   const grouped = {};
   for (const lot of lots) {
     grouped[lot.coin] = grouped[lot.coin] || [];
@@ -84,8 +153,8 @@ function renderLotsTable(lots) {
 
   // Sort coins by total market value desc
   const sortedCoins = Object.keys(grouped).sort((a,b) => {
-    const va = grouped[a].reduce((s,l)=>s+l.market_value,0);
-    const vb = grouped[b].reduce((s,l)=>s+l.market_value,0);
+    const va = grouped[a].reduce((s,l)=>s+(l.market_value||0),0);
+    const vb = grouped[b].reduce((s,l)=>s+(l.market_value||0),0);
     return vb - va;
   });
 
@@ -96,6 +165,9 @@ function renderLotsTable(lots) {
   let rows = "";
   for (const coin of sortedCoins) {
     const coinLots = grouped[coin];
+    // count from ALL lots for this coin (not just filtered)
+    const allCoinLots = cryptoAllLots.filter(l => l.coin === coin);
+
     coinLots.forEach((lot, i) => {
       const sig       = SIGNAL_CONFIG[lot.signal] || SIGNAL_CONFIG.HOLD;
       const gain      = lot.gain_pct;
@@ -106,7 +178,7 @@ function renderLotsTable(lots) {
              ${getCoinIcon(lot.coin)}
              <div>
                <div style="font-weight:600;font-size:14px;">${lot.coin}</div>
-               <div style="font-size:11px;color:#999;">${coinLots.length} lot${coinLots.length>1?"s":""}</div>
+               <div style="font-size:11px;color:#999;">${allCoinLots.length} lot${allCoinLots.length>1?"s":""}</div>
              </div>
            </div>`
         : `<div style="padding-left:40px;color:#bbb;font-size:12px;">↳</div>`;
@@ -121,25 +193,26 @@ function renderLotsTable(lots) {
           <td style="padding:10px 12px;text-align:right;font-size:13px;font-weight:600;color:${gainColor};">${lot.cost_usd>0?gainStr:"—"}</td>
           <td style="padding:10px 12px;text-align:right;font-size:13px;">$${fmt(lot.market_value)}</td>
           <td style="padding:10px 12px;text-align:center;">
-            <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:${sig.bg};color:${sig.color};border:1px solid ${sig.color}33;">${sig.label}</span>
+            <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;
+              background:${sig.bg};color:${sig.color};border:1px solid ${sig.color}33;">${sig.label}</span>
           </td>
         </tr>`;
     });
 
-    // Coin subtotal
-    const totalVal  = coinLots.reduce((s,l)=>s+l.market_value,0);
-    const totalCost = coinLots.reduce((s,l)=>s+l.cost_usd*l.qty,0);
+    // Coin subtotal — only show if all lots for that coin are visible
+    const totalVal  = coinLots.reduce((s,l)=>s+(l.market_value||0),0);
+    const totalCost = coinLots.reduce((s,l)=>s+(l.cost_usd>0?l.cost_usd*l.qty:0),0);
     const totalGain = totalCost>0?((totalVal-totalCost)/totalCost*100):0;
     const gc        = totalGain>=0?"#27ae60":"#e74c3c";
     rows += `
       <tr style="background:#fafafa;border-bottom:2px solid #e8e8e8;">
         <td colspan="6" style="padding:6px 12px 6px 52px;font-size:12px;color:#999;">${coin} total</td>
         <td style="padding:6px 12px;text-align:right;font-size:13px;font-weight:600;">$${fmt(totalVal)}</td>
-        <td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:600;color:${gc};">${totalGain>=0?"+":""}${fmt(totalGain)}%</td>
+        <td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:600;color:${gc};">${totalCost>0?(totalGain>=0?"+":"")+ fmt(totalGain)+"%":"—"}</td>
       </tr>`;
   }
 
-  return `
+  tableArea.innerHTML = `
     <div style="overflow-x:auto;border:1px solid #eee;border-radius:8px;">
       <table style="width:100%;border-collapse:collapse;min-width:700px;">
         <thead>
@@ -160,19 +233,18 @@ function renderLotsTable(lots) {
 }
 
 async function loadCryptoTab() {
+  cryptoSignalFilter = "all";
   document.getElementById("crypto-content").innerHTML = `
     <div style="padding:60px;text-align:center;color:#999;font-size:13px;">Loading crypto lots…</div>`;
   try {
     const resp = await fetch(CRYPTO_JSON_URL + "?t=" + Date.now());
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    const lots = data.lots || [];
+    cryptoAllLots = data.lots || [];
 
-    if (lots.length === 0) {
+    if (cryptoAllLots.length === 0) {
       document.getElementById("crypto-content").innerHTML = `
-        <div style="padding:60px;text-align:center;color:#999;">
-          No open lots found.
-        </div>`;
+        <div style="padding:60px;text-align:center;color:#999;">No open lots found.</div>`;
       return;
     }
 
@@ -183,18 +255,11 @@ async function loadCryptoTab() {
         .cr-value{font-size:22px;font-weight:600;color:#222;}
         .cr-sub{font-size:12px;color:#aaa;margin-top:2px;}
       </style>
-      ${renderSummaryCards(lots, data.updated_uae)}
-      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <div style="font-size:13px;font-weight:600;color:#333;">
-          ${lots.length} open lots · ${[...new Set(lots.map(l=>l.coin))].length} coins
-        </div>
-        <div style="margin-left:auto;display:flex;gap:6px;font-size:11px;">
-          ${Object.entries(SIGNAL_CONFIG).map(([k,v])=>
-            `<span style="padding:3px 8px;border-radius:10px;background:${v.bg};color:${v.color};border:1px solid ${v.color}33;font-weight:600;">${v.label}</span>`
-          ).join("")}
-        </div>
-      </div>
-      ${renderLotsTable(lots)}`;
+      <div id="crypto-summary">${renderSummaryCards(cryptoAllLots, data.updated_uae)}</div>
+      <div id="crypto-filter-bar">${renderFilterBar()}</div>
+      <div id="crypto-table-area"></div>`;
+
+    renderCryptoTable();
   } catch(err) {
     document.getElementById("crypto-content").innerHTML = `
       <div style="padding:40px;text-align:center;color:#e74c3c;">
@@ -205,4 +270,5 @@ async function loadCryptoTab() {
   }
 }
 
-window.loadCryptoTab = loadCryptoTab;
+window.loadCryptoTab   = loadCryptoTab;
+window.setCryptoFilter = setCryptoFilter;
