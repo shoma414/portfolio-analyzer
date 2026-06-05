@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
 fetch_crypto.py
-Fetches open buy lots from Crypto.com Exchange API and saves to data/crypto_portfolio.json
-Signals: sell >= 10%, near sell >= 7%, buy <= lowest lot cost * 0.95
+- Reads crypto_transactions.xlsx from data/ for lot-level cost basis
+- Fetches live balances from Crypto.com Exchange API for reconciliation
+- Fetches live prices from Crypto.com Exchange API
+- Reconstructs open lots using FIFO, reconciled to actual Exchange balance
+- Saves data/crypto_portfolio.json
 """
 
 import hashlib
@@ -14,20 +17,42 @@ from datetime import datetime, timezone
 
 import requests
 
-# ── Config ────────────────────────────────────────────────────────────────────
+try:
+    import openpyxl
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
+
+try:
+    import pandas as pd
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
+
+# ── Config ─────────────────────────────────────────────────────────────────────
 API_KEY    = os.environ["CDC_API_KEY"]
 API_SECRET = os.environ["CDC_API_SECRET"]
 BASE_URL   = "https://api.crypto.com/exchange/v1"
 
 TRACKED_COINS = ["BTC", "ETH", "SOL", "XRP", "SUI", "CRO", "HBAR", "ADA", "AVAX"]
 
+# Transaction kinds that represent direct buys (no baskets)
+DIRECT_BUY_KINDS = ["viban_purchase"]
+
+# Transaction kinds that represent direct sells
+SELL_KINDS = [
+    "trading.limit_order.cash_account.sell_commit",
+    "crypto_viban_exchange",
+]
+
 SELL_PCT      = 10.0
 NEAR_SELL_PCT =  7.0
 BUY_PCT       =  5.0
+UAE_OFFSET    = 4 * 3600
 
-UAE_OFFSET = 4 * 3600
+CSV_PATH = "data/crypto_transactions.xlsx"
 
-# ── Signing (exact algorithm from CDC docs) ───────────────────────────────────
+# ── CDC API signing ─────────────────────────────────────────────────────────────
 MAX_LEVEL = 3
 
 def params_to_str(obj, level=0):
@@ -40,9 +65,7 @@ def params_to_str(obj, level=0):
             val = obj[key]
             if val is None:
                 result += "null"
-            elif isinstance(val, list):
-                result += params_to_str(val, level + 1)
-            elif isinstance(val, dict):
+            elif isinstance(val, (list, dict)):
                 result += params_to_str(val, level + 1)
             else:
                 result += str(val)
@@ -91,154 +114,211 @@ def private_post(method: str, params: dict = None) -> dict:
         raise RuntimeError(f"API error {data.get('code')}: {data.get('message')}")
     return data.get("result", {})
 
-# ── Fetch current prices via public/get-tickers ───────────────────────────────
+# ── Fetch live prices ───────────────────────────────────────────────────────────
 def fetch_prices() -> dict:
     prices = {}
     try:
-        resp = requests.get(
-            f"{BASE_URL}/public/get-tickers",
-            timeout=15,
-        )
+        resp = requests.get(f"{BASE_URL}/public/get-tickers", timeout=15)
         resp.raise_for_status()
-        data = resp.json()
-        tickers = data.get("result", {}).get("data", [])
+        tickers = resp.json().get("result", {}).get("data", [])
         for t in tickers:
-            inst = t.get("i", "")          # e.g. "BTC_USDT"
+            inst = t.get("i", "")
             for coin in TRACKED_COINS:
                 if inst == f"{coin}_USDT":
-                    # "a" = best ask, "b" = best bid; use mid or last trade "k"
-                    ask = float(t.get("a", 0) or 0)
-                    bid = float(t.get("b", 0) or 0)
                     last = float(t.get("k", 0) or 0)
-                    # prefer last trade price; fall back to mid
+                    ask  = float(t.get("a", 0) or 0)
+                    bid  = float(t.get("b", 0) or 0)
                     if last > 0:
                         prices[coin] = last
                     elif ask > 0 and bid > 0:
                         prices[coin] = (ask + bid) / 2
-                    elif ask > 0:
-                        prices[coin] = ask
     except Exception as e:
-        print(f"  Warning: could not fetch tickers: {e}")
+        print(f"  Warning fetching prices: {e}")
     return prices
 
-# ── Fetch order history ────────────────────────────────────────────────────────
-def fetch_all_orders() -> list:
-    all_orders = []
-    for coin in TRACKED_COINS:
-        instrument = f"{coin}_USDT"
-        start_id = None
-        while True:
-            params = {
-                "instrument_name": instrument,
-                "page_size": 100,
-            }
-            if start_id:
-                params["start_id"] = str(start_id)
-            try:
-                time.sleep(1.1)   # rate limit: 1 req/sec
-                result = private_post("private/get-order-history", params)
-                orders = result.get("order_list", [])
-            except Exception as e:
-                print(f"  Warning: {instrument}: {e}")
-                break
-            if not orders:
-                break
-            # only keep FILLED BUY orders
-            all_orders.extend([o for o in orders
-                                if o.get("status") == "FILLED"
-                                and o.get("side", "").upper() == "BUY"])
-            if len(orders) < 100:
-                break
-            start_id = orders[-1].get("order_id")
-            if not start_id:
-                break
-    return all_orders
+# ── Fetch live Exchange balances ────────────────────────────────────────────────
+def fetch_exchange_balances() -> dict:
+    """Returns {coin: actual_balance} from Exchange API."""
+    balances = {}
+    try:
+        result = private_post("private/user-balance")
+        data   = result.get("data", [])
+        for account in data:
+            for pos in account.get("position_balances", []):
+                coin = pos.get("instrument_name", "")
+                qty  = float(pos.get("quantity", 0) or 0)
+                if coin in TRACKED_COINS and qty > 0:
+                    balances[coin] = qty
+    except Exception as e:
+        print(f"  Warning fetching balances: {e}")
+    return balances
 
-def fetch_all_sells() -> dict:
-    """Returns {coin: total_qty_sold}"""
-    sells = {}
-    for coin in TRACKED_COINS:
-        instrument = f"{coin}_USDT"
-        start_id = None
-        total_sold = 0.0
-        while True:
-            params = {
-                "instrument_name": instrument,
-                "page_size": 100,
-            }
-            if start_id:
-                params["start_id"] = str(start_id)
-            try:
-                time.sleep(1.1)
-                result = private_post("private/get-order-history", params)
-                orders = result.get("order_list", [])
-            except Exception as e:
-                print(f"  Warning sells {instrument}: {e}")
-                break
-            if not orders:
-                break
-            for o in orders:
-                if (o.get("status") == "FILLED"
-                        and o.get("side", "").upper() == "SELL"):
-                    total_sold += float(o.get("cumulative_quantity", 0) or 0)
-            if len(orders) < 100:
-                break
-            start_id = orders[-1].get("order_id")
-            if not start_id:
-                break
-        if total_sold > 0:
-            sells[coin] = total_sold
-    return sells
+# ── Parse CSV for direct buy lots ──────────────────────────────────────────────
+def parse_csv_lots() -> tuple:
+    """
+    Returns (buy_lots, sell_qty_by_coin) from the transaction CSV.
+    buy_lots: list of {coin, qty, cost_usd, date}
+    sell_qty_by_coin: {coin: total_sold_qty}
+    """
+    if not os.path.exists(CSV_PATH):
+        print(f"  Warning: {CSV_PATH} not found — no CSV lots loaded")
+        return [], {}
 
-# ── Reconstruct open lots ──────────────────────────────────────────────────────
-def reconstruct_lots(buy_orders: list, sells: dict) -> list:
-    # Group buys by coin, sort oldest first
-    buys_by_coin = {}
-    for o in buy_orders:
-        inst = o.get("instrument_name", "")
-        coin = inst.replace("_USDT", "")
-        if coin not in TRACKED_COINS:
+    if HAS_PANDAS:
+        try:
+            df = pd.read_excel(CSV_PATH)
+        except Exception as e:
+            print(f"  Warning reading CSV: {e}")
+            return [], {}
+    elif HAS_OPENPYXL:
+        try:
+            wb = openpyxl.load_workbook(CSV_PATH, read_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+            headers = [str(c) for c in rows[0]]
+            import types
+            df_data = [dict(zip(headers, row)) for row in rows[1:]]
+            # minimal dict-based processing below
+            wb.close()
+            return _parse_rows_dict(df_data)
+        except Exception as e:
+            print(f"  Warning reading xlsx with openpyxl: {e}")
+            return [], {}
+    else:
+        print("  Warning: neither pandas nor openpyxl available")
+        return [], {}
+
+    buy_lots = []
+    sell_qty = {}
+
+    for _, row in df.iterrows():
+        kind      = str(row.get("Transaction Kind", "") or "")
+        to_curr   = str(row.get("To Currency", "") or "").strip()
+        to_amt    = row.get("To Amount", None)
+        currency  = str(row.get("Currency", "") or "").strip()
+        amount    = row.get("Amount", None)
+        native_usd = row.get("Native Amount (in USD)", None)
+        ts        = row.get("Timestamp (UTC)", None)
+
+        # ── Direct buys only ──
+        if kind in DIRECT_BUY_KINDS:
+            # viban_purchase: To Currency = coin received, To Amount = qty, Native Amount = USD cost
+            if to_curr in TRACKED_COINS and to_amt and float(to_amt) > 0:
+                qty      = float(to_amt)
+                cost_usd = abs(float(native_usd)) / qty if native_usd and qty > 0 else 0
+                date_str = str(ts)[:10] if ts else "unknown"
+                if cost_usd > 0:
+                    buy_lots.append({
+                        "coin":     to_curr,
+                        "qty":      qty,
+                        "cost_usd": round(cost_usd, 6),
+                        "date":     date_str,
+                        "remaining": qty,
+                    })
+
+        # ── Direct sells ──
+        elif kind in SELL_KINDS:
+            if currency in TRACKED_COINS and amount:
+                sold = abs(float(amount))
+                sell_qty[currency] = sell_qty.get(currency, 0) + sold
+
+    # Sort buy lots oldest first per coin
+    buy_lots.sort(key=lambda x: (x["coin"], x["date"]))
+    print(f"  Loaded {len(buy_lots)} direct buy lots from CSV")
+    print(f"  Sells from CSV: {sell_qty}")
+    return buy_lots, sell_qty
+
+def _parse_rows_dict(rows):
+    """Fallback parser when pandas not available."""
+    buy_lots = []
+    sell_qty = {}
+    for row in rows:
+        kind     = str(row.get("Transaction Kind", "") or "")
+        to_curr  = str(row.get("To Currency", "") or "").strip()
+        to_amt   = row.get("To Amount")
+        currency = str(row.get("Currency", "") or "").strip()
+        amount   = row.get("Amount")
+        native_usd = row.get("Native Amount (in USD)")
+        ts       = row.get("Timestamp (UTC)")
+
+        if kind in DIRECT_BUY_KINDS:
+            if to_curr in TRACKED_COINS and to_amt and float(to_amt or 0) > 0:
+                qty = float(to_amt)
+                cost_usd = abs(float(native_usd)) / qty if native_usd and qty > 0 else 0
+                date_str = str(ts)[:10] if ts else "unknown"
+                if cost_usd > 0:
+                    buy_lots.append({
+                        "coin": to_curr, "qty": qty,
+                        "cost_usd": round(cost_usd, 6),
+                        "date": date_str, "remaining": qty,
+                    })
+        elif kind in SELL_KINDS:
+            if currency in TRACKED_COINS and amount:
+                sell_qty[currency] = sell_qty.get(currency, 0) + abs(float(amount))
+    buy_lots.sort(key=lambda x: (x["coin"], x["date"]))
+    return buy_lots, sell_qty
+
+# ── Reconstruct open lots reconciled to Exchange balance ───────────────────────
+def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) -> list:
+    """
+    1. Apply CSV sells FIFO to reduce lot quantities
+    2. Reconcile remaining lot totals to actual Exchange balance
+       (handles transfers, dust, rounding)
+    """
+    # Group by coin
+    by_coin = {}
+    for lot in buy_lots:
+        by_coin.setdefault(lot["coin"], []).append(dict(lot))
+
+    # Apply CSV sells FIFO
+    for coin, sold in sell_qty.items():
+        if coin not in by_coin:
             continue
-        qty    = float(o.get("cumulative_quantity", 0) or 0)
-        avg_px = float(o.get("avg_price", 0) or 0)
-        ts_ms  = int(o.get("create_time", 0) or 0)
-        if qty <= 0 or avg_px <= 0:
-            continue
-        date_str = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
-        buys_by_coin.setdefault(coin, []).append({
-            "coin":      coin,
-            "qty":       qty,
-            "cost_usd":  avg_px,
-            "date":      date_str,
-            "remaining": qty,
-        })
-
-    for coin in buys_by_coin:
-        buys_by_coin[coin].sort(key=lambda x: x["date"])
-
-    # Apply sells FIFO per coin
-    for coin, sold_qty in sells.items():
-        if coin not in buys_by_coin:
-            continue
-        remaining_sell = sold_qty
-        for lot in buys_by_coin[coin]:
+        remaining_sell = sold
+        for lot in by_coin[coin]:
             if remaining_sell <= 0:
                 break
             reduce = min(lot["remaining"], remaining_sell)
             lot["remaining"] -= reduce
             remaining_sell   -= reduce
 
-    # Collect open lots
     open_lots = []
     for coin in TRACKED_COINS:
-        for lot in buys_by_coin.get(coin, []):
-            if lot["remaining"] > 0.000001:
+        lots = by_coin.get(coin, [])
+        csv_total = sum(l["remaining"] for l in lots)
+        exchange_bal = exchange_balances.get(coin, 0)
+
+        if exchange_bal <= 0:
+            # coin not on Exchange — skip
+            continue
+
+        if csv_total <= 0:
+            # No CSV history but coin exists on Exchange
+            # Create a single lot with unknown cost
+            open_lots.append({
+                "coin":     coin,
+                "qty":      round(exchange_bal, 8),
+                "cost_usd": 0,
+                "date":     "unknown",
+            })
+            continue
+
+        # Reconcile: scale lots so they sum to Exchange balance
+        # This handles any difference from transfers/dust/staking rewards
+        scale = exchange_bal / csv_total if csv_total > 0 else 1.0
+        if abs(scale - 1.0) > 0.05:
+            print(f"  Note: {coin} CSV total={csv_total:.6f}, Exchange={exchange_bal:.6f}, scaling by {scale:.4f}")
+
+        for lot in lots:
+            adj_qty = lot["remaining"] * scale
+            if adj_qty > 0.000001:
                 open_lots.append({
-                    "coin":     lot["coin"],
-                    "qty":      round(lot["remaining"], 8),
+                    "coin":     coin,
+                    "qty":      round(adj_qty, 8),
                     "cost_usd": round(lot["cost_usd"], 6),
                     "date":     lot["date"],
                 })
+
     return open_lots
 
 # ── Apply signals ──────────────────────────────────────────────────────────────
@@ -246,23 +326,26 @@ def apply_signals(lots: list, prices: dict) -> list:
     lowest_cost = {}
     for lot in lots:
         c = lot["coin"]
-        if c not in lowest_cost or lot["cost_usd"] < lowest_cost[c]:
-            lowest_cost[c] = lot["cost_usd"]
+        if lot["cost_usd"] > 0:
+            if c not in lowest_cost or lot["cost_usd"] < lowest_cost[c]:
+                lowest_cost[c] = lot["cost_usd"]
 
     enriched = []
     for lot in lots:
         coin      = lot["coin"]
         price     = prices.get(coin, 0)
         cost      = lot["cost_usd"]
-        gain_pct  = ((price - cost) / cost * 100) if cost > 0 else 0
+        gain_pct  = ((price - cost) / cost * 100) if cost > 0 and price > 0 else 0
         low_cost  = lowest_cost.get(coin, cost)
-        buy_thresh = low_cost * (1 - BUY_PCT / 100)
+        buy_thresh = low_cost * (1 - BUY_PCT / 100) if low_cost > 0 else 0
 
-        if gain_pct >= SELL_PCT:
+        if cost <= 0:
+            signal = "HOLD"  # unknown cost basis
+        elif gain_pct >= SELL_PCT:
             signal = "SELL"
         elif gain_pct >= NEAR_SELL_PCT:
             signal = "NEAR_SELL"
-        elif price > 0 and price <= buy_thresh:
+        elif price > 0 and buy_thresh > 0 and price <= buy_thresh:
             signal = "BUY"
         else:
             signal = "HOLD"
@@ -282,21 +365,20 @@ def main():
     uae_now = datetime.fromtimestamp(time.time() + UAE_OFFSET, tz=timezone.utc)
     print(f"UAE time: {uae_now.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    print("Fetching buy orders...")
-    buy_orders = fetch_all_orders()
-    print(f"  {len(buy_orders)} filled buy orders found")
-
-    print("Fetching sell orders...")
-    sells = fetch_all_sells()
-    print(f"  Sells: {sells}")
-
-    print("Fetching current prices...")
+    print("Fetching live prices...")
     prices = fetch_prices()
-    print(f"  Prices fetched: {list(prices.keys())}")
+    print(f"  Prices: {list(prices.keys())}")
 
-    print("Reconstructing open lots...")
-    lots = reconstruct_lots(buy_orders, sells)
-    print(f"  {len(lots)} open lots found")
+    print("Fetching Exchange balances...")
+    exchange_balances = fetch_exchange_balances()
+    print(f"  Exchange balances: {exchange_balances}")
+
+    print("Parsing CSV for buy lots...")
+    buy_lots, sell_qty = parse_csv_lots()
+
+    print("Reconstructing open lots (reconciled to Exchange balance)...")
+    lots = reconstruct_lots(buy_lots, sell_qty, exchange_balances)
+    print(f"  {len(lots)} open lots")
 
     print("Applying signals...")
     lots = apply_signals(lots, prices)
