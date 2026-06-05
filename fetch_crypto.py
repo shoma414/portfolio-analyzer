@@ -4,7 +4,7 @@ fetch_crypto.py
 - Reads crypto_transactions.xlsx from data/ for lot-level cost basis
 - Fetches live balances from Crypto.com Exchange API for reconciliation
 - Fetches live prices from Crypto.com Exchange API
-- Reconstructs open lots using FIFO, reconciled to actual Exchange balance
+- Reconstructs open lots using LIFO, reconciled to actual Exchange balance
 - Saves data/crypto_portfolio.json
 """
 
@@ -261,7 +261,7 @@ def _parse_rows_dict(rows):
 # ── Reconstruct open lots reconciled to Exchange balance ───────────────────────
 def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) -> list:
     """
-    1. Apply CSV sells FIFO to reduce lot quantities
+    1. Apply CSV sells LOFO (lowest cost first) to reduce lot quantities
     2. Reconcile remaining lot totals to actual Exchange balance
        (handles transfers, dust, rounding)
     """
@@ -270,12 +270,12 @@ def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) ->
     for lot in buy_lots:
         by_coin.setdefault(lot["coin"], []).append(dict(lot))
 
-    # Apply CSV sells FIFO
+    # Apply CSV sells LOFO — cheapest cost lot consumed first
     for coin, sold in sell_qty.items():
         if coin not in by_coin:
             continue
         remaining_sell = sold
-        for lot in by_coin[coin]:
+        for lot in sorted(by_coin[coin], key=lambda x: x["cost_usd"]):
             if remaining_sell <= 0:
                 break
             reduce = min(lot["remaining"], remaining_sell)
