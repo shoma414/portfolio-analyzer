@@ -262,8 +262,7 @@ def _parse_rows_dict(rows):
 def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) -> list:
     """
     1. Apply CSV sells LOFO (lowest cost first) to reduce lot quantities
-    2. Reconcile remaining lot totals to actual Exchange balance
-       (handles transfers, dust, rounding)
+    2. Only show coins confirmed on Exchange (uses balance as existence check only)
     """
     # Group by coin
     by_coin = {}
@@ -285,36 +284,17 @@ def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) ->
     open_lots = []
     for coin in TRACKED_COINS:
         lots = by_coin.get(coin, [])
-        csv_total = sum(l["remaining"] for l in lots)
-        exchange_bal = exchange_balances.get(coin, 0)
 
-        if exchange_bal <= 0:
-            # coin not on Exchange — skip
+        # Only show coin if it exists on Exchange
+        if exchange_balances.get(coin, 0) <= 0:
             continue
 
-        if csv_total <= 0:
-            # No CSV history but coin exists on Exchange
-            # Create a single lot with unknown cost
-            open_lots.append({
-                "coin":     coin,
-                "qty":      round(exchange_bal, 8),
-                "cost_usd": 0,
-                "date":     "unknown",
-            })
-            continue
-
-        # Reconcile: scale lots so they sum to Exchange balance
-        # This handles any difference from transfers/dust/staking rewards
-        scale = exchange_bal / csv_total if csv_total > 0 else 1.0
-        if abs(scale - 1.0) > 0.05:
-            print(f"  Note: {coin} CSV total={csv_total:.6f}, Exchange={exchange_bal:.6f}, scaling by {scale:.4f}")
-
+        # Use CSV quantities exactly — no scaling
         for lot in lots:
-            adj_qty = lot["remaining"] * scale
-            if adj_qty > 0.000001:
+            if lot["remaining"] > 0.000001:
                 open_lots.append({
                     "coin":     coin,
-                    "qty":      round(adj_qty, 8),
+                    "qty":      round(lot["remaining"], 8),
                     "cost_usd": round(lot["cost_usd"], 6),
                     "date":     lot["date"],
                 })
