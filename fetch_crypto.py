@@ -220,12 +220,17 @@ def parse_csv_lots() -> tuple:
         elif kind in SELL_KINDS:
             if currency in TRACKED_COINS and amount:
                 sold = abs(float(amount))
-                sell_qty[currency] = sell_qty.get(currency, 0) + sold
+                date_str = str(ts)[:10] if ts else "unknown"
+                sell_qty.setdefault(currency, []).append({
+                    "qty":  sold,
+                    "date": date_str,
+                })
 
     # Sort buy lots oldest first per coin
     buy_lots.sort(key=lambda x: (x["coin"], x["date"]))
     print(f"  Loaded {len(buy_lots)} direct buy lots from CSV")
-    print(f"  Sells from CSV: {sell_qty}")
+    sell_summary = {c: sum(s["qty"] for s in v) for c,v in sell_qty.items()}
+    print(f"  Sells from CSV: {sell_summary}")
     return buy_lots, sell_qty
 
 def _parse_rows_dict(rows):
@@ -254,7 +259,11 @@ def _parse_rows_dict(rows):
                     })
         elif kind in SELL_KINDS:
             if currency in TRACKED_COINS and amount:
-                sell_qty[currency] = sell_qty.get(currency, 0) + abs(float(amount))
+                date_str = str(ts)[:10] if ts else "unknown"
+                sell_qty.setdefault(currency, []).append({
+                    "qty":  abs(float(amount)),
+                    "date": date_str,
+                })
     buy_lots.sort(key=lambda x: (x["coin"], x["date"]))
     return buy_lots, sell_qty
 
@@ -269,17 +278,25 @@ def reconstruct_lots(buy_lots: list, sell_qty: dict, exchange_balances: dict) ->
     for lot in buy_lots:
         by_coin.setdefault(lot["coin"], []).append(dict(lot))
 
-    # Apply CSV sells LOFO — cheapest cost lot consumed first
-    for coin, sold in sell_qty.items():
+    # Apply CSV sells: cheapest lot BEFORE the sell date consumed first
+    # sell_qty is now a list of {qty, date} dicts per coin
+    for coin, sell_list in sell_qty.items():
         if coin not in by_coin:
             continue
-        remaining_sell = sold
-        for lot in sorted(by_coin[coin], key=lambda x: x["cost_usd"]):
-            if remaining_sell <= 0:
-                break
-            reduce = min(lot["remaining"], remaining_sell)
-            lot["remaining"] -= reduce
-            remaining_sell   -= reduce
+        for sell in sell_list:
+            remaining_sell = sell["qty"]
+            sell_date      = sell["date"]
+            # Only consume lots bought before or on the sell date, cheapest first
+            eligible = sorted(
+                [l for l in by_coin[coin] if l["date"] <= sell_date],
+                key=lambda x: x["cost_usd"]
+            )
+            for lot in eligible:
+                if remaining_sell <= 0:
+                    break
+                reduce = min(lot["remaining"], remaining_sell)
+                lot["remaining"] -= reduce
+                remaining_sell   -= reduce
 
     open_lots = []
     for coin in TRACKED_COINS:
