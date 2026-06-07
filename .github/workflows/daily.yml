@@ -2,11 +2,18 @@ name: Daily Portfolio Update
 
 on:
   schedule:
-    - cron: "0 10 * * 1-5"
-    - cron: "30 13 * * 1-5"
-    - cron: "0 15 * * 1-5"
-    - cron: "0 17 * * 1-5"
-    - cron: "0 19 * * 1-5"
+    - cron: "0 0 * * *"
+    - cron: "0 2 * * *"
+    - cron: "0 4 * * *"
+    - cron: "0 6 * * *"
+    - cron: "0 8 * * *"
+    - cron: "0 10 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 14 * * *"
+    - cron: "0 16 * * *"
+    - cron: "0 18 * * *"
+    - cron: "0 20 * * *"
+    - cron: "0 22 * * *"
   workflow_dispatch:
 
 jobs:
@@ -32,8 +39,9 @@ jobs:
           OUTLOOK_CLIENT_SECRET: ${{ secrets.OUTLOOK_CLIENT_SECRET }}
           OUTLOOK_EMAIL:         ${{ secrets.OUTLOOK_EMAIL }}
           OUTLOOK_REFRESH_TOKEN: ${{ secrets.OUTLOOK_REFRESH_TOKEN }}
-          FETCH_EMAIL: ${{ github.event.schedule == '0 10 * * 1-5' && 'true' || github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          FETCH_EMAIL: ${{ github.event.schedule == '0 6 * * *' && 'true' || github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python fetch_csv.py
+        continue-on-error: true
 
       - name: Fetch Crypto.com lots
         env:
