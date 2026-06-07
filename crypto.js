@@ -199,14 +199,19 @@ function renderCryptoTable() {
         </tr>`;
     });
 
-    // Coin subtotal — only show if all lots for that coin are visible
+    // Coin subtotal
     const totalVal  = coinLots.reduce((s,l)=>s+(l.market_value||0),0);
+    const totalQty  = coinLots.reduce((s,l)=>s+l.qty,0);
     const totalCost = coinLots.reduce((s,l)=>s+(l.cost_usd>0?l.cost_usd*l.qty:0),0);
     const totalGain = totalCost>0?((totalVal-totalCost)/totalCost*100):0;
     const gc        = totalGain>=0?"#27ae60":"#e74c3c";
     rows += `
       <tr style="background:#fafafa;border-bottom:2px solid #e8e8e8;">
-        <td colspan="6" style="padding:6px 12px 6px 52px;font-size:12px;color:#999;">${coin} total</td>
+        <td colspan="2" style="padding:6px 12px 6px 52px;font-size:12px;color:#999;font-weight:600;">${coin} total</td>
+        <td style="padding:6px 12px;text-align:right;font-size:12px;font-weight:600;color:#555;">${fmt(totalQty,6)}</td>
+        <td style="padding:6px 12px;"></td>
+        <td style="padding:6px 12px;"></td>
+        <td style="padding:6px 12px;"></td>
         <td style="padding:6px 12px;text-align:right;font-size:13px;font-weight:600;">$${fmt(totalVal)}</td>
         <td style="padding:6px 12px;text-align:center;font-size:12px;font-weight:600;color:${gc};">${totalCost>0?(totalGain>=0?"+":"")+ fmt(totalGain)+"%":"—"}</td>
       </tr>`;
