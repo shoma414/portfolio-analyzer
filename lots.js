@@ -41,6 +41,7 @@ async function fetchLivePrices() {
       });
       // Store full price data (with pre/post)
       window.livePricesData = data.prices;
+      lastPricesTimestamp = data.last_updated;
       document.getElementById("priceUpdated").innerHTML =
         `<span class="live-dot"></span>Prices last updated: ${toUAETime(data.last_updated)} (CSV: ${toUAETime(data.csv_updated || data.last_updated)})`;
       setStatus("✓ Live prices loaded", "success");
@@ -54,11 +55,107 @@ async function fetchLivePrices() {
   priceTimer = setTimeout(fetchLivePrices, PRICE_REFRESH_MS);
 }
 
+const WORKER_URL = "https://portfolio-analyzer-api.msrz740.workers.dev";
+const REFRESH_COOLDOWN_MS = 60 * 1000; // 60 second cooldown
+let lastRefreshTriggered = 0;
+let pollTimer = null;
+let lastPricesTimestamp = null;
+
 async function manualRefresh() {
-  if (priceTimer) clearTimeout(priceTimer);
+  const now = Date.now();
+  const btn = document.querySelector('.refresh-btn');
+
+  // Cooldown check
+  const elapsed = now - lastRefreshTriggered;
+  if (lastRefreshTriggered > 0 && elapsed < REFRESH_COOLDOWN_MS) {
+    const remaining = Math.ceil((REFRESH_COOLDOWN_MS - elapsed) / 1000);
+    setStatus(`⏳ Please wait ${remaining}s before refreshing again`, "loading");
+    return;
+  }
+
   if (!allRows.length) { await loadFromRepo(); return; }
-  setStatus("Refreshing...", "loading");
-  await fetchLivePrices();
+
+  // Trigger fresh workflow run
+  try {
+    setStatus("🔄 Triggering fresh price update...", "loading");
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Updating...'; }
+
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'trigger_workflow' })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      lastRefreshTriggered = now;
+      setStatus("✅ Workflow started — prices updating (takes ~2 min)...", "success");
+      startPollingForUpdate();
+      startCooldownTimer(btn);
+    } else {
+      setStatus("⚠ Could not trigger update — reading cached prices", "error");
+      await fetchLivePrices();
+      if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+    }
+  } catch(e) {
+    // Fallback to reading existing prices
+    setStatus("⚠ Worker unavailable — reading cached prices", "error");
+    await fetchLivePrices();
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  }
+}
+
+function startCooldownTimer(btn) {
+  let remaining = Math.ceil(REFRESH_COOLDOWN_MS / 1000);
+  const interval = setInterval(() => {
+    remaining--;
+    if (btn) btn.textContent = `↻ Refresh (${remaining}s)`;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+    }
+  }, 1000);
+}
+
+function startPollingForUpdate() {
+  if (pollTimer) clearInterval(pollTimer);
+  let attempts = 0;
+  const maxAttempts = 20; // Poll for up to ~3 minutes
+
+  pollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const res = await fetch(PRICES_URL + "?t=" + Date.now());
+      if (!res.ok) return;
+      const data = await res.json();
+      const newTimestamp = data.last_updated;
+
+      if (lastPricesTimestamp && newTimestamp !== lastPricesTimestamp) {
+        // New data detected!
+        clearInterval(pollTimer);
+        setStatus("✅ Prices updated successfully!", "success");
+        setTimeout(() => document.getElementById("statusBar").style.display = "none", 3000);
+        livePrices = {};
+        Object.entries(data.prices).forEach(([sym, val]) => {
+          livePrices[sym] = typeof val === 'object' ? val.price : val;
+        });
+        window.livePricesData = data.prices;
+        document.getElementById("priceUpdated").innerHTML =
+          `<span class="live-dot"></span>Prices last updated: ${toUAETime(data.last_updated)}`;
+        renderAll();
+      }
+
+      // Store current timestamp for comparison
+      if (!lastPricesTimestamp) lastPricesTimestamp = newTimestamp;
+
+    } catch(e) {}
+
+    if (attempts >= maxAttempts) {
+      clearInterval(pollTimer);
+      setStatus("⚠ Update taking longer than expected — try refreshing manually", "error");
+    }
+  }, 10000); // Poll every 10 seconds
 }
 
 function parseCSV(text) {
