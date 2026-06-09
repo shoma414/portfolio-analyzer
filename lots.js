@@ -155,7 +155,7 @@ function startPollingForUpdate() {
       clearInterval(pollTimer);
       setStatus("⚠ Update taking longer than expected — try refreshing manually", "error");
     }
-  }, 10000); // Poll every 10 seconds
+  }, 30000); // Poll every 30 seconds
 }
 
 function parseCSV(text) {
