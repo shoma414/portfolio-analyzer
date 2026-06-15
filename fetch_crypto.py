@@ -158,49 +158,50 @@ def fetch_exchange_orders() -> list:
     """
     exchange_lots = []
     for coin in TRACKED_COINS:
-        instrument = f"{coin}_USDT"
-        start_id = None
-        while True:
-            params = {"instrument_name": instrument, "page_size": 100}
-            if start_id:
-                params["start_id"] = str(start_id)
-            try:
-                time.sleep(0.5)
-                result = private_post("private/get-order-history", params)
-                orders = result.get("order_list", [])
-            except Exception as e:
-                print(f"  Warning fetching Exchange orders for {instrument}: {e}")
-                break
-            if not orders:
-                break
-            for o in orders:
-                if o.get("status") != "FILLED":
-                    continue
-                side   = o.get("side", "").upper()
-                qty    = float(o.get("cumulative_quantity", 0) or 0)
-                avg_px = float(o.get("avg_price", 0) or 0)
-                ts_ms  = int(o.get("create_time", 0) or 0)
-                date_str = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        # Try both USD and USDT instrument names
+        for instrument in [f"{coin}_USD", f"{coin}_USDT"]:
+            start_id = None
+            while True:
+                params = {"instrument_name": instrument, "page_size": 100}
+                if start_id:
+                    params["start_id"] = str(start_id)
+                try:
+                    time.sleep(0.3)
+                    result = private_post("private/get-order-history", params)
+                    orders = result.get("order_list", [])
+                except Exception as e:
+                    print(f"  Warning fetching Exchange orders for {instrument}: {e}")
+                    break
+                if not orders:
+                    break
+                for o in orders:
+                    if o.get("status") != "FILLED":
+                        continue
+                    side   = o.get("side", "").upper()
+                    qty    = float(o.get("cumulative_quantity", 0) or 0)
+                    avg_px = float(o.get("avg_price", 0) or 0)
+                    ts_ms  = int(o.get("create_time", 0) or 0)
+                    date_str = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
 
-                if qty <= 0 or avg_px <= 0:
-                    continue
+                    if qty <= 0 or avg_px <= 0:
+                        continue
 
-                # Only include buys made AFTER migration date
-                if side == "BUY" and date_str >= MIGRATION_DATE:
-                    exchange_lots.append({
-                        "coin":      coin,
-                        "qty":       qty,
-                        "cost_usd":  round(avg_px, 6),
-                        "date":      date_str,
-                        "remaining": qty,
-                        "source":    "exchange",
-                    })
+                    # Only include buys made AFTER migration date
+                    if side == "BUY" and date_str >= MIGRATION_DATE:
+                        exchange_lots.append({
+                            "coin":      coin,
+                            "qty":       qty,
+                            "cost_usd":  round(avg_px, 6),
+                            "date":      date_str,
+                            "remaining": qty,
+                            "source":    "exchange",
+                        })
 
-            if len(orders) < 100:
-                break
-            start_id = orders[-1].get("order_id")
-            if not start_id:
-                break
+                if len(orders) < 100:
+                    break
+                start_id = orders[-1].get("order_id")
+                if not start_id:
+                    break
 
     print(f"  {len(exchange_lots)} new Exchange buy lots found")
     return exchange_lots
