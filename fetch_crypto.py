@@ -426,10 +426,11 @@ def main():
     print(f"  Signal breakdown: {by_signal}")
 
     output = {
-        "updated_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "updated_uae": uae_now.strftime("%Y-%m-%d %H:%M:%S"),
-        "prices":      prices,
-        "lots":        lots,
+        "updated_utc":       datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "updated_uae":       uae_now.strftime("%Y-%m-%d %H:%M:%S"),
+        "prices":            prices,
+        "lots":              lots,
+        "exchange_balances": exchange_balances,
         "thresholds": {
             "sell_pct":      SELL_PCT,
             "near_sell_pct": NEAR_SELL_PCT,
