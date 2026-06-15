@@ -168,13 +168,17 @@ def fetch_exchange_orders() -> list:
                 try:
                     time.sleep(0.3)
                     result = private_post("private/get-order-history", params)
-                    orders = result.get("order_list", [])
+                    orders = result.get("order_list", result.get("data", []))
                     if coin == "BTC":
                         print(f"  DEBUG {instrument}: result keys={list(result.keys())}, orders count={len(orders)}")
                         if orders:
                             print(f"  DEBUG first order: {orders[0]}")
                         else:
                             print(f"  DEBUG full result: {result}")
+                    # Also check raw data key
+                    raw_data = result.get("data", [])
+                    if raw_data and coin == "BTC":
+                        print(f"  DEBUG data key found: {len(raw_data)} items, first={raw_data[0]}")
                 except Exception as e:
                     print(f"  Warning fetching Exchange orders for {instrument}: {e}")
                     break
