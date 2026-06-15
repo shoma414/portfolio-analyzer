@@ -230,13 +230,14 @@ function renderReconciliation(lots, exchangeBalances) {
     const dashTotal   = lots.filter(l => l.coin === coin).reduce((s,l) => s + l.qty, 0);
     const exchBalance = exchangeBalances[coin] || 0;
     const diff        = Math.abs(dashTotal - exchBalance);
+    const diffPct     = exchBalance > 0 ? (diff / exchBalance * 100) : 0;
     const threshold   = exchBalance * 0.001; // 0.1% tolerance
     const match       = diff <= threshold;
     if (!match) allMatch = false;
 
     const status = match
       ? `<span style="color:#27ae60;font-weight:600;">✅ Match</span>`
-      : `<span style="color:#e74c3c;font-weight:600;">⚠️ Gap: ${diff.toFixed(6)}</span>`;
+      : `<span style="color:#e74c3c;font-weight:600;">⚠️ Gap: ${diff.toFixed(6)} (${diffPct.toFixed(2)}%)</span>`;
 
     rows += `
       <tr style="border-bottom:1px solid #f0f0f0;">
