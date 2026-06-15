@@ -47,6 +47,7 @@ NEAR_SELL_PCT =  7.0
 BUY_PCT       =  5.0
 UAE_OFFSET    = 4 * 3600
 CSV_PATH      = "data/crypto_transactions.xlsx"
+MANUAL_PATH   = "data/crypto_manual_lots.json"
 
 # Date when coins were moved from App to Exchange
 # Exchange orders after this date are new direct Exchange buys
@@ -254,6 +255,39 @@ def parse_csv_lots() -> tuple:
     print(f"  Sells from CSV: {sell_summary}")
     return buy_lots, sell_qty
 
+# ── Read manual lots ──────────────────────────────────────────────────────────
+def read_manual_lots() -> list:
+    """
+    Reads crypto_manual_lots.json — manually added Exchange app buy orders.
+    Format: [{"coin": "BTC", "qty": 0.00814, "cost_usd": 61382.62, "date": "2026-06-09"}]
+    """
+    if not os.path.exists(MANUAL_PATH):
+        print(f"  No manual lots file found at {MANUAL_PATH}")
+        return []
+    try:
+        with open(MANUAL_PATH) as f:
+            lots = json.load(f)
+        result = []
+        for lot in lots:
+            coin = lot.get("coin", "")
+            qty  = float(lot.get("qty", 0))
+            cost = float(lot.get("cost_usd", 0))
+            date = lot.get("date", "unknown")
+            if coin in TRACKED_COINS and qty > 0 and cost > 0:
+                result.append({
+                    "coin":      coin,
+                    "qty":       qty,
+                    "cost_usd":  round(cost, 6),
+                    "date":      date,
+                    "remaining": qty,
+                    "source":    "manual",
+                })
+        print(f"  {len(result)} manual lots loaded")
+        return result
+    except Exception as e:
+        print(f"  Warning reading manual lots: {e}")
+        return []
+
 # ── Merge CSV + Exchange lots ──────────────────────────────────────────────────
 def merge_lots(csv_lots: list, exchange_lots: list) -> list:
     """
@@ -371,8 +405,11 @@ def main():
     print("Fetching new Exchange buy orders...")
     exchange_lots = fetch_exchange_orders()
 
-    print("Merging CSV + Exchange lots...")
-    all_lots = merge_lots(csv_lots, exchange_lots)
+    print("Reading manual lots...")
+    manual_lots = read_manual_lots()
+
+    print("Merging CSV + Exchange + manual lots...")
+    all_lots = merge_lots(csv_lots, exchange_lots + manual_lots)
     print(f"  Total lots before sells: {len(all_lots)}")
 
     print("Reconstructing open lots...")
