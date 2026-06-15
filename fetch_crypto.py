@@ -334,9 +334,38 @@ def reconstruct_lots(all_lots: list, sell_qty: dict, exchange_balances: dict) ->
 
     open_lots = []
     for coin in TRACKED_COINS:
-        if exchange_balances.get(coin, 0) <= 0:
+        exchange_bal = exchange_balances.get(coin, 0)
+        if exchange_bal <= 0:
             continue
-        for lot in by_coin.get(coin, []):
+
+        coin_lots = [lot for lot in by_coin.get(coin, []) if lot["remaining"] > 0.000001]
+        csv_total = sum(l["remaining"] for l in coin_lots)
+
+        if csv_total <= 0:
+            continue
+
+        # If dashboard > exchange: scale lots DOWN proportionally to match Exchange
+        # This handles coins that stayed in App (baskets, staking) and were never transferred
+        if csv_total > exchange_bal * 1.001:
+            scale = exchange_bal / csv_total
+            print(f"  {coin}: dashboard={csv_total:.6f} > exchange={exchange_bal:.6f}, scaling by {scale:.6f}")
+            for lot in coin_lots:
+                lot["remaining"] = lot["remaining"] * scale
+
+        # If exchange > dashboard: add a rewards lot for the gap
+        elif exchange_bal > csv_total * 1.001:
+            gap = exchange_bal - csv_total
+            print(f"  {coin}: exchange={exchange_bal:.6f} > dashboard={csv_total:.6f}, adding rewards lot {gap:.6f}")
+            coin_lots.append({
+                "coin":      coin,
+                "qty":       round(gap, 8),
+                "cost_usd":  0,
+                "date":      "rewards",
+                "remaining": gap,
+                "source":    "rewards",
+            })
+
+        for lot in coin_lots:
             if lot["remaining"] > 0.000001:
                 open_lots.append({
                     "coin":     coin,
