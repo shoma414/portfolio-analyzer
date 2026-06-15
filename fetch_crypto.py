@@ -352,18 +352,11 @@ def reconstruct_lots(all_lots: list, sell_qty: dict, exchange_balances: dict) ->
             for lot in coin_lots:
                 lot["remaining"] = lot["remaining"] * scale
 
-        # If exchange > dashboard: add a rewards lot for the gap
+        # If exchange > dashboard: gap is from rewards/staking — noted but not auto-added
+        # User should add these manually via the + Add Buy button if needed
         elif exchange_bal > csv_total * 1.001:
             gap = exchange_bal - csv_total
-            print(f"  {coin}: exchange={exchange_bal:.6f} > dashboard={csv_total:.6f}, adding rewards lot {gap:.6f}")
-            coin_lots.append({
-                "coin":      coin,
-                "qty":       round(gap, 8),
-                "cost_usd":  0,
-                "date":      "rewards",
-                "remaining": gap,
-                "source":    "rewards",
-            })
+            print(f"  {coin}: exchange={exchange_bal:.6f} > dashboard={csv_total:.6f}, gap={gap:.6f} (rewards/staking)")
 
         for lot in coin_lots:
             if lot["remaining"] > 0.000001:
