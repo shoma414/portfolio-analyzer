@@ -218,6 +218,63 @@ function renderSummaryCards(lots, updatedUAE) {
     <div style="font-size:12px;color:#999;margin-bottom:12px;">Last updated: ${updatedUAE} UAE</div>`;
 }
 
+// ── Reconciliation Banner ─────────────────────────────────────────────────────
+function renderReconciliation(lots, exchangeBalances) {
+  if (!exchangeBalances || Object.keys(exchangeBalances).length === 0) return "";
+
+  const coins = [...new Set(lots.map(l => l.coin))].sort();
+  let allMatch = true;
+  let rows = "";
+
+  for (const coin of coins) {
+    const dashTotal   = lots.filter(l => l.coin === coin).reduce((s,l) => s + l.qty, 0);
+    const exchBalance = exchangeBalances[coin] || 0;
+    const diff        = Math.abs(dashTotal - exchBalance);
+    const threshold   = exchBalance * 0.001; // 0.1% tolerance
+    const match       = diff <= threshold;
+    if (!match) allMatch = false;
+
+    const status = match
+      ? `<span style="color:#27ae60;font-weight:600;">✅ Match</span>`
+      : `<span style="color:#e74c3c;font-weight:600;">⚠️ Gap: ${diff.toFixed(6)}</span>`;
+
+    rows += `
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:8px 12px;display:flex;align-items:center;gap:8px;">
+          ${getCoinIcon(coin)}
+          <span style="font-weight:600;font-size:13px;">${coin}</span>
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-size:13px;">${dashTotal.toFixed(6)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:13px;">${exchBalance.toFixed(6)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:13px;">${status}</td>
+      </tr>`;
+  }
+
+  const headerColor = allMatch ? "#27ae60" : "#e74c3c";
+  const headerBg    = allMatch ? "#eafaf1" : "#fdecea";
+  const headerText  = allMatch ? "✅ All positions match Exchange balances" : "⚠️ Some positions don't match Exchange balances";
+
+  return `
+    <details style="margin-bottom:16px;border:1px solid ${headerColor}33;border-radius:8px;overflow:hidden;">
+      <summary style="padding:10px 14px;background:${headerBg};color:${headerColor};font-size:13px;font-weight:600;cursor:pointer;list-style:none;">
+        ${headerText} &nbsp;▾
+      </summary>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f8f8;border-bottom:2px solid #eee;">
+              <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;">Coin</th>
+              <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666;">Dashboard</th>
+              <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666;">Exchange</th>
+              <th style="padding:8px 12px;text-align:right;font-size:12px;color:#666;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </details>`;
+}
+
 // ── Filter Bar ─────────────────────────────────────────────────────────────────
 function renderFilterBar() {
   function btnStyle(k) {
@@ -469,6 +526,7 @@ async function loadCryptoTab() {
     }
 
     cryptoAllLots = lots;
+    const exchangeBalances = data.exchange_balances || {};
 
     document.getElementById("crypto-content").innerHTML = `
       ${renderModals()}
@@ -479,6 +537,7 @@ async function loadCryptoTab() {
         .cr-sub{font-size:12px;color:#aaa;margin-top:2px;}
       </style>
       <div id="crypto-summary">${renderSummaryCards(cryptoAllLots, data.updated_uae)}</div>
+      <div id="crypto-reconciliation">${renderReconciliation(cryptoAllLots, exchangeBalances)}</div>
       <div id="crypto-filter-bar">${renderFilterBar()}</div>
       <div id="crypto-table-area"></div>`;
 
