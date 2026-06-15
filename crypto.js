@@ -84,13 +84,8 @@ function cryptoCoinCardHtml(coin, allCoinLots, signalFilter) {
 
   if (visibleLots.length === 0) return ""; // coin has no lots matching filter
 
-  // Sort lots: sell first, then near sell, then buy, then hold; within each by date
-  const sigOrder = { SELL:0, NEAR_SELL:1, BUY:2, HOLD:3 };
-  const sortedLots = [...visibleLots].sort((a,b) =>
-    sigOrder[a.signal] !== sigOrder[b.signal]
-      ? sigOrder[a.signal] - sigOrder[b.signal]
-      : a.date.localeCompare(b.date)
-  );
+  // Sort lots: biggest loss first (most negative gain%) → biggest gain last
+  const sortedLots = [...visibleLots].sort((a,b) => a.gain_pct - b.gain_pct);
 
   // Individual lot rows
   const lotRows = sortedLots.map(lot => {
