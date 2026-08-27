@@ -1,16 +1,16 @@
 {
-  "updated_utc": "2026-08-27T01:32:07Z",
-  "updated_uae": "2026-08-27 05:31:55",
+  "updated_utc": "2026-08-27T02:02:23Z",
+  "updated_uae": "2026-08-27 06:02:12",
   "prices": {
-    "ETH": 2499.42,
+    "ETH": 2500.84,
     "SUI": 0.75605,
-    "XRP": 1.4085,
-    "BTC": 78835.32,
-    "ADA": 0.21143,
-    "HBAR": 0.078031,
-    "CRO": 0.05979,
-    "AVAX": 7.383,
-    "SOL": 101.52
+    "XRP": 1.4134,
+    "BTC": 78940.79,
+    "ADA": 0.21123,
+    "HBAR": 0.078066,
+    "CRO": 0.05951,
+    "AVAX": 7.395,
+    "SOL": 101.64
   },
   "lots": [
     {
@@ -19,10 +19,10 @@
       "cost_usd": 105355.205074,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -25.17,
+      "current_price": 78940.79,
+      "gain_pct": -25.07,
       "signal": "HOLD",
-      "market_value": 748.28
+      "market_value": 749.28
     },
     {
       "coin": "BTC",
@@ -30,10 +30,10 @@
       "cost_usd": 101306.858474,
       "date": "2025-11-07",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -22.18,
+      "current_price": 78940.79,
+      "gain_pct": -22.08,
       "signal": "HOLD",
-      "market_value": 389.09
+      "market_value": 389.61
     },
     {
       "coin": "BTC",
@@ -41,10 +41,10 @@
       "cost_usd": 96481.019751,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -18.29,
+      "current_price": 78940.79,
+      "gain_pct": -18.18,
       "signal": "HOLD",
-      "market_value": 409.57
+      "market_value": 410.11
     },
     {
       "coin": "BTC",
@@ -52,10 +52,10 @@
       "cost_usd": 98120.020409,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -19.65,
+      "current_price": 78940.79,
+      "gain_pct": -19.55,
       "signal": "HOLD",
-      "market_value": 401.73
+      "market_value": 402.27
     },
     {
       "coin": "BTC",
@@ -63,10 +63,10 @@
       "cost_usd": 90887.99322,
       "date": "2025-11-20",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -13.26,
+      "current_price": 78940.79,
+      "gain_pct": -13.14,
       "signal": "HOLD",
-      "market_value": 434.77
+      "market_value": 435.35
     },
     {
       "coin": "BTC",
@@ -74,10 +74,10 @@
       "cost_usd": 88261.699913,
       "date": "2025-11-21",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -10.68,
+      "current_price": 78940.79,
+      "gain_pct": -10.56,
       "signal": "HOLD",
-      "market_value": 447.71
+      "market_value": 448.3
     },
     {
       "coin": "BTC",
@@ -85,10 +85,10 @@
       "cost_usd": 86795.995395,
       "date": "2025-12-01",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -9.17,
+      "current_price": 78940.79,
+      "gain_pct": -9.05,
       "signal": "HOLD",
-      "market_value": 455.27
+      "market_value": 455.88
     },
     {
       "coin": "BTC",
@@ -96,10 +96,10 @@
       "cost_usd": 84261.53949,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -6.44,
+      "current_price": 78940.79,
+      "gain_pct": -6.31,
       "signal": "HOLD",
-      "market_value": 468.96
+      "market_value": 469.59
     },
     {
       "coin": "BTC",
@@ -107,10 +107,10 @@
       "cost_usd": 80161.792742,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -1.65,
+      "current_price": 78940.79,
+      "gain_pct": -1.52,
       "signal": "HOLD",
-      "market_value": 492.87
+      "market_value": 493.53
     },
     {
       "coin": "BTC",
@@ -118,10 +118,10 @@
       "cost_usd": 82589.914946,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": -4.55,
+      "current_price": 78940.79,
+      "gain_pct": -4.42,
       "signal": "HOLD",
-      "market_value": 478.45
+      "market_value": 479.09
     },
     {
       "coin": "BTC",
@@ -129,10 +129,10 @@
       "cost_usd": 70544.077767,
       "date": "2026-02-05",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": 11.75,
+      "current_price": 78940.79,
+      "gain_pct": 11.9,
       "signal": "SELL",
-      "market_value": 560.15
+      "market_value": 560.9
     },
     {
       "coin": "BTC",
@@ -140,10 +140,10 @@
       "cost_usd": 64782.892236,
       "date": "2026-06-05",
       "source": "csv",
-      "current_price": 78835.32,
-      "gain_pct": 21.69,
+      "current_price": 78940.79,
+      "gain_pct": 21.85,
       "signal": "SELL",
-      "market_value": 609.96
+      "market_value": 610.78
     },
     {
       "coin": "ETH",
@@ -151,10 +151,10 @@
       "cost_usd": 3391.428964,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -26.3,
+      "current_price": 2500.84,
+      "gain_pct": -26.26,
       "signal": "HOLD",
-      "market_value": 399.35
+      "market_value": 399.58
     },
     {
       "coin": "ETH",
@@ -162,10 +162,10 @@
       "cost_usd": 3536.017878,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -29.32,
+      "current_price": 2500.84,
+      "gain_pct": -29.28,
       "signal": "HOLD",
-      "market_value": 353.42
+      "market_value": 353.62
     },
     {
       "coin": "ETH",
@@ -173,10 +173,10 @@
       "cost_usd": 3292.744766,
       "date": "2025-11-07",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -24.09,
+      "current_price": 2500.84,
+      "gain_pct": -24.05,
       "signal": "HOLD",
-      "market_value": 379.53
+      "market_value": 379.75
     },
     {
       "coin": "ETH",
@@ -184,10 +184,10 @@
       "cost_usd": 3161.089735,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -20.93,
+      "current_price": 2500.84,
+      "gain_pct": -20.89,
       "signal": "HOLD",
-      "market_value": 396.32
+      "market_value": 396.55
     },
     {
       "coin": "ETH",
@@ -195,10 +195,10 @@
       "cost_usd": 3070.4094,
       "date": "2025-11-17",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -18.6,
+      "current_price": 2500.84,
+      "gain_pct": -18.55,
       "signal": "HOLD",
-      "market_value": 408.03
+      "market_value": 408.26
     },
     {
       "coin": "ETH",
@@ -206,10 +206,10 @@
       "cost_usd": 2793.62728,
       "date": "2025-11-21",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -10.53,
+      "current_price": 2500.84,
+      "gain_pct": -10.48,
       "signal": "HOLD",
-      "market_value": 448.45
+      "market_value": 448.71
     },
     {
       "coin": "ETH",
@@ -217,10 +217,10 @@
       "cost_usd": 2796.136325,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -10.61,
+      "current_price": 2500.84,
+      "gain_pct": -10.56,
       "signal": "HOLD",
-      "market_value": 448.05
+      "market_value": 448.3
     },
     {
       "coin": "ETH",
@@ -228,10 +228,10 @@
       "cost_usd": 2460.879389,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": 1.57,
+      "current_price": 2500.84,
+      "gain_pct": 1.62,
       "signal": "HOLD",
-      "market_value": 509.09
+      "market_value": 509.38
     },
     {
       "coin": "ETH",
@@ -239,10 +239,10 @@
       "cost_usd": 2584.394754,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": -3.29,
+      "current_price": 2500.84,
+      "gain_pct": -3.23,
       "signal": "HOLD",
-      "market_value": 484.76
+      "market_value": 485.03
     },
     {
       "coin": "ETH",
@@ -250,10 +250,10 @@
       "cost_usd": 2237.061308,
       "date": "2026-02-02",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": 11.73,
+      "current_price": 2500.84,
+      "gain_pct": 11.79,
       "signal": "SELL",
-      "market_value": 560.02
+      "market_value": 560.34
     },
     {
       "coin": "ETH",
@@ -261,10 +261,10 @@
       "cost_usd": 1810.053459,
       "date": "2026-06-05",
       "source": "csv",
-      "current_price": 2499.42,
-      "gain_pct": 38.09,
+      "current_price": 2500.84,
+      "gain_pct": 38.16,
       "signal": "SELL",
-      "market_value": 692.14
+      "market_value": 692.53
     },
     {
       "coin": "SOL",
@@ -272,10 +272,10 @@
       "cost_usd": 210.342048,
       "date": "2025-02-02",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -51.74,
+      "current_price": 101.64,
+      "gain_pct": -51.68,
       "signal": "HOLD",
-      "market_value": 146.05
+      "market_value": 146.22
     },
     {
       "coin": "SOL",
@@ -283,10 +283,10 @@
       "cost_usd": 201.90817,
       "date": "2025-09-25",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -49.72,
+      "current_price": 101.64,
+      "gain_pct": -49.66,
       "signal": "HOLD",
-      "market_value": 266.38
+      "market_value": 266.7
     },
     {
       "coin": "SOL",
@@ -294,10 +294,10 @@
       "cost_usd": 181.563992,
       "date": "2025-10-10",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -44.09,
+      "current_price": 101.64,
+      "gain_pct": -44.02,
       "signal": "HOLD",
-      "market_value": 273.33
+      "market_value": 273.66
     },
     {
       "coin": "SOL",
@@ -305,10 +305,10 @@
       "cost_usd": 173.080451,
       "date": "2025-11-03",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -41.35,
+      "current_price": 101.64,
+      "gain_pct": -41.28,
       "signal": "HOLD",
-      "market_value": 286.73
+      "market_value": 287.07
     },
     {
       "coin": "SOL",
@@ -316,10 +316,10 @@
       "cost_usd": 181.886307,
       "date": "2025-11-03",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -44.18,
+      "current_price": 101.64,
+      "gain_pct": -44.12,
       "signal": "HOLD",
-      "market_value": 272.85
+      "market_value": 273.17
     },
     {
       "coin": "SOL",
@@ -327,10 +327,10 @@
       "cost_usd": 154.502194,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -34.29,
+      "current_price": 101.64,
+      "gain_pct": -34.21,
       "signal": "HOLD",
-      "market_value": 321.21
+      "market_value": 321.59
     },
     {
       "coin": "SOL",
@@ -338,10 +338,10 @@
       "cost_usd": 164.814156,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -38.4,
+      "current_price": 101.64,
+      "gain_pct": -38.33,
       "signal": "HOLD",
-      "market_value": 301.11
+      "market_value": 301.47
     },
     {
       "coin": "SOL",
@@ -349,10 +349,10 @@
       "cost_usd": 145.906165,
       "date": "2025-11-13",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -30.42,
+      "current_price": 101.64,
+      "gain_pct": -30.34,
       "signal": "HOLD",
-      "market_value": 340.13
+      "market_value": 340.54
     },
     {
       "coin": "SOL",
@@ -360,10 +360,10 @@
       "cost_usd": 151.794822,
       "date": "2025-11-13",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -33.12,
+      "current_price": 101.64,
+      "gain_pct": -33.04,
       "signal": "HOLD",
-      "market_value": 326.94
+      "market_value": 327.33
     },
     {
       "coin": "SOL",
@@ -371,10 +371,10 @@
       "cost_usd": 141.707597,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -28.36,
+      "current_price": 101.64,
+      "gain_pct": -28.27,
       "signal": "HOLD",
-      "market_value": 351.08
+      "market_value": 351.49
     },
     {
       "coin": "SOL",
@@ -382,10 +382,10 @@
       "cost_usd": 134.776593,
       "date": "2025-11-17",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -24.68,
+      "current_price": 101.64,
+      "gain_pct": -24.59,
       "signal": "HOLD",
-      "market_value": 369.13
+      "market_value": 369.57
     },
     {
       "coin": "SOL",
@@ -393,10 +393,10 @@
       "cost_usd": 128.442939,
       "date": "2025-12-15",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -20.96,
+      "current_price": 101.64,
+      "gain_pct": -20.87,
       "signal": "HOLD",
-      "market_value": 397.8
+      "market_value": 398.27
     },
     {
       "coin": "SOL",
@@ -404,10 +404,10 @@
       "cost_usd": 119.521995,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -15.06,
+      "current_price": 101.64,
+      "gain_pct": -14.96,
       "signal": "HOLD",
-      "market_value": 416.25
+      "market_value": 416.74
     },
     {
       "coin": "SOL",
@@ -415,10 +415,10 @@
       "cost_usd": 106.136904,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -4.35,
+      "current_price": 101.64,
+      "gain_pct": -4.24,
       "signal": "HOLD",
-      "market_value": 468.74
+      "market_value": 469.29
     },
     {
       "coin": "SOL",
@@ -426,10 +426,10 @@
       "cost_usd": 111.86305,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": -9.25,
+      "current_price": 101.64,
+      "gain_pct": -9.14,
       "signal": "HOLD",
-      "market_value": 444.74
+      "market_value": 445.27
     },
     {
       "coin": "SOL",
@@ -437,10 +437,10 @@
       "cost_usd": 93.729774,
       "date": "2026-02-04",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": 8.31,
+      "current_price": 101.64,
+      "gain_pct": 8.44,
       "signal": "NEAR_SELL",
-      "market_value": 530.79
+      "market_value": 531.41
     },
     {
       "coin": "SOL",
@@ -448,10 +448,10 @@
       "cost_usd": 80.502864,
       "date": "2026-02-13",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": 26.11,
+      "current_price": 101.64,
+      "gain_pct": 26.26,
       "signal": "SELL",
-      "market_value": 334.05
+      "market_value": 334.45
     },
     {
       "coin": "SOL",
@@ -459,10 +459,10 @@
       "cost_usd": 71.139401,
       "date": "2026-06-05",
       "source": "csv",
-      "current_price": 101.52,
-      "gain_pct": 42.71,
+      "current_price": 101.64,
+      "gain_pct": 42.87,
       "signal": "SELL",
-      "market_value": 699.34
+      "market_value": 700.16
     },
     {
       "coin": "XRP",
@@ -470,10 +470,10 @@
       "cost_usd": 2.827456,
       "date": "2025-09-25",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -50.18,
+      "current_price": 1.4134,
+      "gain_pct": -50.01,
       "signal": "HOLD",
-      "market_value": 269.94
+      "market_value": 270.88
     },
     {
       "coin": "XRP",
@@ -481,10 +481,10 @@
       "cost_usd": 1.73487,
       "date": "2025-10-10",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -18.81,
+      "current_price": 1.4134,
+      "gain_pct": -18.53,
       "signal": "HOLD",
-      "market_value": 405.94
+      "market_value": 407.35
     },
     {
       "coin": "XRP",
@@ -492,10 +492,10 @@
       "cost_usd": 2.636561,
       "date": "2025-10-10",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -46.58,
+      "current_price": 1.4134,
+      "gain_pct": -46.39,
       "signal": "HOLD",
-      "market_value": 267.11
+      "market_value": 268.04
     },
     {
       "coin": "XRP",
@@ -503,10 +503,10 @@
       "cost_usd": 2.18265,
       "date": "2025-11-17",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -35.47,
+      "current_price": 1.4134,
+      "gain_pct": -35.24,
       "signal": "HOLD",
-      "market_value": 323.46
+      "market_value": 324.58
     },
     {
       "coin": "XRP",
@@ -514,10 +514,10 @@
       "cost_usd": 1.982357,
       "date": "2025-11-21",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -28.95,
+      "current_price": 1.4134,
+      "gain_pct": -28.7,
       "signal": "HOLD",
-      "market_value": 355.26
+      "market_value": 356.49
     },
     {
       "coin": "XRP",
@@ -525,10 +525,10 @@
       "cost_usd": 1.985865,
       "date": "2025-12-15",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -29.07,
+      "current_price": 1.4134,
+      "gain_pct": -28.83,
       "signal": "HOLD",
-      "market_value": 355.51
+      "market_value": 356.75
     },
     {
       "coin": "XRP",
@@ -536,10 +536,10 @@
       "cost_usd": 1.911995,
       "date": "2025-12-18",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -26.33,
+      "current_price": 1.4134,
+      "gain_pct": -26.08,
       "signal": "HOLD",
-      "market_value": 368.33
+      "market_value": 369.61
     },
     {
       "coin": "XRP",
@@ -547,10 +547,10 @@
       "cost_usd": 1.808279,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -22.11,
+      "current_price": 1.4134,
+      "gain_pct": -21.84,
       "signal": "HOLD",
-      "market_value": 389.46
+      "market_value": 390.81
     },
     {
       "coin": "XRP",
@@ -558,10 +558,10 @@
       "cost_usd": 1.623685,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -13.25,
+      "current_price": 1.4134,
+      "gain_pct": -12.95,
       "signal": "HOLD",
-      "market_value": 434.81
+      "market_value": 436.32
     },
     {
       "coin": "XRP",
@@ -569,10 +569,10 @@
       "cost_usd": 1.689247,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -16.62,
+      "current_price": 1.4134,
+      "gain_pct": -16.33,
       "signal": "HOLD",
-      "market_value": 417.93
+      "market_value": 419.39
     },
     {
       "coin": "XRP",
@@ -580,10 +580,10 @@
       "cost_usd": 1.393263,
       "date": "2026-02-05",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": 1.09,
+      "current_price": 1.4134,
+      "gain_pct": 1.45,
       "signal": "HOLD",
-      "market_value": 273.9
+      "market_value": 274.86
     },
     {
       "coin": "XRP",
@@ -591,10 +591,10 @@
       "cost_usd": 1.492398,
       "date": "2026-02-05",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": -5.62,
+      "current_price": 1.4134,
+      "gain_pct": -5.29,
       "signal": "HOLD",
-      "market_value": 473.06
+      "market_value": 474.71
     },
     {
       "coin": "XRP",
@@ -602,10 +602,10 @@
       "cost_usd": 1.203306,
       "date": "2026-06-05",
       "source": "csv",
-      "current_price": 1.4085,
-      "gain_pct": 17.05,
+      "current_price": 1.4134,
+      "gain_pct": 17.46,
       "signal": "SELL",
-      "market_value": 586.71
+      "market_value": 588.75
     },
     {
       "coin": "SUI",
@@ -756,10 +756,10 @@
       "cost_usd": 0.089428,
       "date": "2025-10-10",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -33.14,
+      "current_price": 0.05951,
+      "gain_pct": -33.45,
       "signal": "BUY",
-      "market_value": 303.51
+      "market_value": 302.09
     },
     {
       "coin": "CRO",
@@ -767,10 +767,10 @@
       "cost_usd": 0.131265,
       "date": "2025-11-03",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -54.45,
+      "current_price": 0.05951,
+      "gain_pct": -54.66,
       "signal": "BUY",
-      "market_value": 206.78
+      "market_value": 205.81
     },
     {
       "coin": "CRO",
@@ -778,10 +778,10 @@
       "cost_usd": 0.120187,
       "date": "2025-11-04",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -50.25,
+      "current_price": 0.05951,
+      "gain_pct": -50.49,
       "signal": "BUY",
-      "market_value": 225.84
+      "market_value": 224.78
     },
     {
       "coin": "CRO",
@@ -789,10 +789,10 @@
       "cost_usd": 0.118108,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -49.38,
+      "current_price": 0.05951,
+      "gain_pct": -49.61,
       "signal": "BUY",
-      "market_value": 230.38
+      "market_value": 229.3
     },
     {
       "coin": "CRO",
@@ -800,10 +800,10 @@
       "cost_usd": 0.111926,
       "date": "2025-11-16",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -46.58,
+      "current_price": 0.05951,
+      "gain_pct": -46.83,
       "signal": "BUY",
-      "market_value": 243.1
+      "market_value": 241.97
     },
     {
       "coin": "CRO",
@@ -811,10 +811,10 @@
       "cost_usd": 0.108172,
       "date": "2025-11-17",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -44.73,
+      "current_price": 0.05951,
+      "gain_pct": -44.99,
       "signal": "BUY",
-      "market_value": 251.54
+      "market_value": 250.36
     },
     {
       "coin": "CRO",
@@ -822,10 +822,10 @@
       "cost_usd": 0.100113,
       "date": "2025-11-21",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -40.28,
+      "current_price": 0.05951,
+      "gain_pct": -40.56,
       "signal": "BUY",
-      "market_value": 271.79
+      "market_value": 270.51
     },
     {
       "coin": "CRO",
@@ -833,10 +833,10 @@
       "cost_usd": 0.098003,
       "date": "2025-12-15",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -38.99,
+      "current_price": 0.05951,
+      "gain_pct": -39.28,
       "signal": "BUY",
-      "market_value": 277.64
+      "market_value": 276.34
     },
     {
       "coin": "CRO",
@@ -844,10 +844,10 @@
       "cost_usd": 0.096764,
       "date": "2025-12-16",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -38.21,
+      "current_price": 0.05951,
+      "gain_pct": -38.5,
       "signal": "BUY",
-      "market_value": 280.5
+      "market_value": 279.19
     },
     {
       "coin": "CRO",
@@ -855,10 +855,10 @@
       "cost_usd": 0.091022,
       "date": "2026-01-29",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -34.31,
+      "current_price": 0.05951,
+      "gain_pct": -34.62,
       "signal": "BUY",
-      "market_value": 298.2
+      "market_value": 296.8
     },
     {
       "coin": "CRO",
@@ -866,10 +866,10 @@
       "cost_usd": 0.082836,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 0.05979,
-      "gain_pct": -27.82,
+      "current_price": 0.05951,
+      "gain_pct": -28.16,
       "signal": "BUY",
-      "market_value": 328.43
+      "market_value": 326.89
     },
     {
       "coin": "HBAR",
@@ -877,10 +877,10 @@
       "cost_usd": 0.167556,
       "date": "2025-11-07",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -53.43,
+      "current_price": 0.078066,
+      "gain_pct": -53.41,
       "signal": "BUY",
-      "market_value": 232.85
+      "market_value": 232.95
     },
     {
       "coin": "HBAR",
@@ -888,10 +888,10 @@
       "cost_usd": 0.156084,
       "date": "2025-11-16",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -50.01,
+      "current_price": 0.078066,
+      "gain_pct": -49.98,
       "signal": "BUY",
-      "market_value": 250.58
+      "market_value": 250.7
     },
     {
       "coin": "HBAR",
@@ -899,10 +899,10 @@
       "cost_usd": 0.133326,
       "date": "2025-11-21",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -41.47,
+      "current_price": 0.078066,
+      "gain_pct": -41.45,
       "signal": "BUY",
-      "market_value": 380.42
+      "market_value": 380.59
     },
     {
       "coin": "HBAR",
@@ -910,10 +910,10 @@
       "cost_usd": 0.123409,
       "date": "2025-12-14",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -36.77,
+      "current_price": 0.078066,
+      "gain_pct": -36.74,
       "signal": "BUY",
-      "market_value": 316.89
+      "market_value": 317.03
     },
     {
       "coin": "HBAR",
@@ -921,10 +921,10 @@
       "cost_usd": 0.105051,
       "date": "2026-01-29",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -25.72,
+      "current_price": 0.078066,
+      "gain_pct": -25.69,
       "signal": "BUY",
-      "market_value": 371.4
+      "market_value": 371.56
     },
     {
       "coin": "HBAR",
@@ -932,10 +932,10 @@
       "cost_usd": 0.095368,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 0.078031,
-      "gain_pct": -18.18,
+      "current_price": 0.078066,
+      "gain_pct": -18.14,
       "signal": "BUY",
-      "market_value": 410.12
+      "market_value": 410.3
     },
     {
       "coin": "ADA",
@@ -943,10 +943,10 @@
       "cost_usd": 0.535533,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -60.52,
+      "current_price": 0.21123,
+      "gain_pct": -60.56,
       "signal": "BUY",
-      "market_value": 197.4
+      "market_value": 197.21
     },
     {
       "coin": "ADA",
@@ -954,10 +954,10 @@
       "cost_usd": 0.497789,
       "date": "2025-11-16",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -57.53,
+      "current_price": 0.21123,
+      "gain_pct": -57.57,
       "signal": "BUY",
-      "market_value": 212.9
+      "market_value": 212.69
     },
     {
       "coin": "ADA",
@@ -965,10 +965,10 @@
       "cost_usd": 0.460799,
       "date": "2025-11-19",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -54.12,
+      "current_price": 0.21123,
+      "gain_pct": -54.16,
       "signal": "BUY",
-      "market_value": 229.99
+      "market_value": 229.77
     },
     {
       "coin": "ADA",
@@ -976,10 +976,10 @@
       "cost_usd": 0.390148,
       "date": "2025-12-01",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -45.81,
+      "current_price": 0.21123,
+      "gain_pct": -45.86,
       "signal": "BUY",
-      "market_value": 271.63
+      "market_value": 271.38
     },
     {
       "coin": "ADA",
@@ -987,10 +987,10 @@
       "cost_usd": 0.336616,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -37.19,
+      "current_price": 0.21123,
+      "gain_pct": -37.25,
       "signal": "BUY",
-      "market_value": 314.83
+      "market_value": 314.53
     },
     {
       "coin": "ADA",
@@ -998,10 +998,10 @@
       "cost_usd": 0.306362,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 0.21143,
-      "gain_pct": -30.99,
+      "current_price": 0.21123,
+      "gain_pct": -31.05,
       "signal": "BUY",
-      "market_value": 345.92
+      "market_value": 345.59
     },
     {
       "coin": "AVAX",
@@ -1009,10 +1009,10 @@
       "cost_usd": 16.464377,
       "date": "2025-11-14",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -55.16,
+      "current_price": 7.395,
+      "gain_pct": -55.08,
       "signal": "BUY",
-      "market_value": 224.77
+      "market_value": 225.13
     },
     {
       "coin": "AVAX",
@@ -1020,10 +1020,10 @@
       "cost_usd": 15.736327,
       "date": "2025-11-16",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -53.08,
+      "current_price": 7.395,
+      "gain_pct": -53.01,
       "signal": "BUY",
-      "market_value": 235.17
+      "market_value": 235.55
     },
     {
       "coin": "AVAX",
@@ -1031,10 +1031,10 @@
       "cost_usd": 13.411342,
       "date": "2025-12-01",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -44.95,
+      "current_price": 7.395,
+      "gain_pct": -44.86,
       "signal": "BUY",
-      "market_value": 275.93
+      "market_value": 276.38
     },
     {
       "coin": "AVAX",
@@ -1042,10 +1042,10 @@
       "cost_usd": 12.78985,
       "date": "2025-12-16",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -42.27,
+      "current_price": 7.395,
+      "gain_pct": -42.18,
       "signal": "BUY",
-      "market_value": 288.63
+      "market_value": 289.1
     },
     {
       "coin": "AVAX",
@@ -1053,10 +1053,10 @@
       "cost_usd": 11.457968,
       "date": "2026-01-30",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -35.56,
+      "current_price": 7.395,
+      "gain_pct": -35.46,
       "signal": "BUY",
-      "market_value": 322.97
+      "market_value": 323.5
     },
     {
       "coin": "AVAX",
@@ -1064,10 +1064,10 @@
       "cost_usd": 10.692739,
       "date": "2026-01-31",
       "source": "csv",
-      "current_price": 7.383,
-      "gain_pct": -30.95,
+      "current_price": 7.395,
+      "gain_pct": -30.84,
       "signal": "BUY",
-      "market_value": 346.09
+      "market_value": 346.65
     }
   ],
   "exchange_balances": {
